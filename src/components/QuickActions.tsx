@@ -11,6 +11,7 @@ import {
   WorkflowIcon,
   UploadCloudIcon } from
 'lucide-react';
+import { useUiActions } from '../contexts/UiActionsContext';
 
 const primaryActions = [
 {
@@ -41,6 +42,7 @@ const secondaryActions = [
 
 
 export function QuickActions() {
+  const { runLabel } = useUiActions();
   return (
     <section aria-labelledby="quick-actions-title">
       <h2
@@ -55,6 +57,7 @@ export function QuickActions() {
         <button
           key={action.label}
           type="button"
+          onClick={() => runLabel(action.label)}
           className={`group flex items-center gap-3 rounded-2xl px-4 py-4 text-left transition-colors duration-150 ease-out ${
           index === 0 ?
           'bg-brand-500 hover:bg-brand-600' :
@@ -91,6 +94,7 @@ export function QuickActions() {
         <button
           key={action.label}
           type="button"
+          onClick={() => runLabel(action.label)}
           className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-ink-700 transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
           
             <action.icon className="h-4 w-4 text-ink-500" aria-hidden="true" />

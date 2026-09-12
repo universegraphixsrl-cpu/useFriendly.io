@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 import {
   initialLeadLists,
   initialLeads,
+  UNASSIGNED,
   type Lead,
   type LeadList } from
 '../data/leads';
@@ -15,6 +16,7 @@ import { courses as initialCourses, type Course } from '../data/courses';
 import { bookingCalendars, type BookingCalendar } from '../data/calendars';
 import { subAccounts } from '../data/subAccounts';
 import { initialMessages, type TeamMessage } from '../data/notifications';
+import { projects as seedProjects, type Project } from '../data/crm';
 
 const subAccountNames = subAccounts.flatMap((group) => group.members);
 
@@ -78,6 +80,15 @@ interface WorkspaceValue {
   unseenSectionFor: (name: string, section: NotifiedSection) => number;
   /** Marchează secțiunea ca văzută pentru sub-accountul respectiv */
   markSectionSeen: (name: string, section: NotifiedSection) => void;
+  projects: Project[];
+  addProject: (input: {name: string;client: string;value: string;}) => void;
+  removeProjectByName: (name: string) => void;
+  addContact: (input: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  }) => void;
 }
 
 export type NotifiedSection = 'leads' | 'calendar' | 'materials';
@@ -99,6 +110,7 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     {});
   const [seenTasks, setSeenTasks] = useState<Record<string, string[]>>({});
   const [messages, setMessages] = useState<TeamMessage[]>(initialMessages);
+  const [projects, setProjects] = useState<Project[]>(seedProjects);
   /** La pornire, tot ce există deja e considerat văzut */
   const [seenSections, setSeenSections] = useState<
     Record<string, Record<NotifiedSection, string[]>>>(
@@ -221,7 +233,51 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
           materials: current[name]?.materials ?? [],
           [section]: sectionIdsFor(name, section)
         }
-      }))
+      })),
+      projects,
+      addProject: ({ name, client, value }) =>
+      setProjects((current) => [
+      {
+        id: `PRJ-${Date.now().toString().slice(-4)}`,
+        name,
+        client,
+        owner: activeUser ?? 'Andreas B.',
+        stage: 'Ofertare',
+        value,
+        progress: 0,
+        due: 'Nou',
+        tasks: '0/0 taskuri'
+      },
+      ...current]
+      ),
+      removeProjectByName: (name) =>
+      setProjects((current) =>
+      current.filter((project) => project.name !== name)
+      ),
+      addContact: ({ firstName, lastName, email, phone }) =>
+      setLeads((current) => {
+        const listId = lists[0]?.id ?? 'list-default';
+        const lead: Lead = {
+          id: `lead-${Date.now()}`,
+          listId,
+          owner: UNASSIGNED,
+          caller: UNASSIGNED,
+          firstName,
+          lastName,
+          phone,
+          email,
+          details: '',
+          vocarooLink: '',
+          zoomLink: '',
+          status: 'Înscris webinar',
+          addedOn: new Date().toISOString(),
+          paidAmount: 0,
+          generatedAmount: 0,
+          payments: [],
+          documents: []
+        };
+        return [lead, ...current];
+      })
     }),
     [
     activeUser,
@@ -234,7 +290,8 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     availability,
     seenTasks,
     seenSections,
-    messages]
+    messages,
+    projects]
 
   );
 

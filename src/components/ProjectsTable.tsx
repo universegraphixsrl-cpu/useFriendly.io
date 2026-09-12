@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FilterIcon, PlusIcon, MoreHorizontalIcon } from 'lucide-react';
-import { projects, type Project } from '../data/crm';
+import type { Project } from '../data/crm';
+import { useWorkspace } from '../contexts/WorkspaceContext';
+import { useUiActions } from '../contexts/UiActionsContext';
 
 const stageStyles: Record<Project['stage'], string> = {
   Ofertare: 'bg-slate-100 text-ink-700',
@@ -10,6 +12,10 @@ const stageStyles: Record<Project['stage'], string> = {
 };
 
 export function ProjectsTable() {
+  const { projects } = useWorkspace();
+  const { runLabel } = useUiActions();
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+
   return (
     <section
       aria-labelledby="projects-title"
@@ -24,12 +30,13 @@ export function ProjectsTable() {
             Proiecte active
           </h2>
           <p className="text-sm text-ink-500">
-            5 din 12 proiecte, sortate după activitate recentă
+            {projects.length} proiecte, sortate după activitate recentă
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => runLabel('Filtre')}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-ink-700 transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
             
             <FilterIcon className="h-4 w-4" aria-hidden="true" />
@@ -37,6 +44,7 @@ export function ProjectsTable() {
           </button>
           <button
             type="button"
+            onClick={() => runLabel('Proiect nou')}
             className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-3 py-2 text-sm font-bold text-white transition-colors duration-150 ease-out hover:bg-brand-600">
             
             <PlusIcon className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
@@ -107,14 +115,43 @@ export function ProjectsTable() {
                 <td className="px-5 py-4 text-sm text-ink-700">
                   {project.due}
                 </td>
-                <td className="px-5 py-4 text-right">
+                <td className="relative px-5 py-4 text-right">
                   <button
                   type="button"
+                  onClick={() =>
+                  setMenuFor((current) =>
+                  current === project.id ? null : project.id
+                  )
+                  }
                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors duration-150 ease-out hover:bg-slate-50 hover:text-brand-600"
                   aria-label={`Opțiuni pentru ${project.name}`}>
                   
                     <MoreHorizontalIcon className="h-4 w-4" aria-hidden="true" />
                   </button>
+                  {menuFor === project.id &&
+                <div className="absolute right-5 top-12 z-20 w-40 rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
+                      <button
+                    type="button"
+                    onClick={() => {
+                      setMenuFor(null);
+                      runLabel('Editează proiect', project.name);
+                    }}
+                    className="flex w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-ink-700 hover:bg-slate-50">
+                    
+                        Editează
+                      </button>
+                      <button
+                    type="button"
+                    onClick={() => {
+                      setMenuFor(null);
+                      runLabel('Șterge', project.name);
+                    }}
+                    className="flex w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50">
+                    
+                        Șterge
+                      </button>
+                    </div>
+                }
                 </td>
               </tr>
             )}
@@ -125,6 +162,7 @@ export function ProjectsTable() {
       <div className="border-t border-slate-100 px-5 py-3">
         <button
           type="button"
+          onClick={() => runLabel('Vezi toate proiectele')}
           className="text-sm font-bold text-brand-600 underline-offset-4 hover:underline">
           
           Vezi toate proiectele →

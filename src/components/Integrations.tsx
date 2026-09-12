@@ -12,6 +12,9 @@ import {
   ArrowRightIcon } from
 'lucide-react';
 import { integrations, type Integration } from '../data/crm';
+import { useNavigate } from 'react-router-dom';
+import { useUiActions } from '../contexts/UiActionsContext';
+import { viewPath } from '../appRoutes';
 
 const icons = [
 MailIcon,
@@ -31,6 +34,8 @@ const statusStyles: Record<Integration['status'], string> = {
 };
 
 export function Integrations() {
+  const navigate = useNavigate();
+  const { runLabel } = useUiActions();
   return (
     <section
       aria-labelledby="integrations-title"
@@ -55,6 +60,7 @@ export function Integrations() {
         </div>
         <button
           type="button"
+          onClick={() => navigate(viewPath.integrations)}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-ink-700 transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
           
           Explorează catalogul
@@ -88,6 +94,9 @@ export function Integrations() {
                 </p>
                 <button
                   type="button"
+                  onClick={() =>
+                  runLabel(connected ? 'Configurează integrarea' : 'Conectează integrarea', integration.name)
+                  }
                   className={`mt-auto pt-4 text-left text-sm font-bold underline-offset-4 hover:underline ${
                   connected ? 'text-ink-700' : 'text-brand-600'}`
                   }>

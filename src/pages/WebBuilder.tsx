@@ -49,7 +49,7 @@ export function WebBuilder() {
     'lista' | 'submissions' | 'statistici'>(
     'lista');
   const [funnelList, setFunnelList] = useState<Funnel[]>(funnels);
-  // la refresh pornim direct în primul funnel, cu editorul de pagini deschis
+  // la refresh pornim în primul funnel, fără overlay-ul de editor peste CRM
   const [openFunnel, setOpenFunnel] = useState<Funnel | null>(funnels[0] ?? null);
 
   const confirm = () => {

@@ -1,8 +1,13 @@
 import React from 'react';
 import { ZapIcon, PlusIcon, PlayIcon, PencilIcon } from 'lucide-react';
 import { automations } from '../data/crm';
+import { useNavigate } from 'react-router-dom';
+import { useUiActions } from '../contexts/UiActionsContext';
+import { viewPath } from '../appRoutes';
 
 export function AutomationsPanel() {
+  const navigate = useNavigate();
+  const { runLabel, notify } = useUiActions();
   return (
     <section
       aria-labelledby="automations-title"
@@ -25,6 +30,7 @@ export function AutomationsPanel() {
         </div>
         <button
           type="button"
+          onClick={() => navigate(viewPath.automations)}
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-ink-700 transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
           
           <PlusIcon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
@@ -59,6 +65,7 @@ export function AutomationsPanel() {
             <div className="mt-2.5 flex items-center gap-2">
               <button
               type="button"
+              onClick={() => runLabel('Editează automatizare', automation.name)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-ink-700 transition-colors duration-150 ease-out hover:bg-brand-50 hover:text-brand-700">
               
                 <PencilIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -66,6 +73,7 @@ export function AutomationsPanel() {
               </button>
               <button
               type="button"
+              onClick={() => notify(`${automation.name} a pornit`)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-ink-700 transition-colors duration-150 ease-out hover:bg-brand-50 hover:text-brand-700">
               
                 <PlayIcon className="h-3.5 w-3.5" aria-hidden="true" />

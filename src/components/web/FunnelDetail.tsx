@@ -93,7 +93,7 @@ export function FunnelDetail({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [access, setAccess] = useState<string[]>([]);
   const [settingsSaved, setSettingsSaved] = useState(false);
-  const [editorOpen, setEditorOpen] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   /** Copiază linkul complet al paginii în clipboard */
   const copyLink = (path: string) => {

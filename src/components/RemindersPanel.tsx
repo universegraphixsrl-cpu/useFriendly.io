@@ -1,6 +1,7 @@
 import React from 'react';
 import { BellIcon, SendIcon } from 'lucide-react';
 import { reminders, type Reminder } from '../data/crm';
+import { useUiActions } from '../contexts/UiActionsContext';
 
 const channelStyles: Record<Reminder['channel'], string> = {
   Email: 'bg-brand-50 text-brand-700',
@@ -10,6 +11,7 @@ const channelStyles: Record<Reminder['channel'], string> = {
 };
 
 export function RemindersPanel() {
+  const { runLabel } = useUiActions();
   return (
     <section
       aria-labelledby="reminders-title"
@@ -32,6 +34,7 @@ export function RemindersPanel() {
         </div>
         <button
           type="button"
+          onClick={() => runLabel('Trimite reminder')}
           className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-2.5 py-1.5 text-xs font-bold text-white transition-colors duration-150 ease-out hover:bg-brand-600">
           
           <SendIcon className="h-3.5 w-3.5" aria-hidden="true" />

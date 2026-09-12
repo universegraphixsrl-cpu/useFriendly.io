@@ -12,11 +12,13 @@ import {
 'lucide-react';
 import type { View } from './Sidebar';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { useUiActions } from '../contexts/UiActionsContext';
 import { NotificationsPanel } from './NotificationsPanel';
 
 interface TopbarProps {
   view: View;
   onNavigate: (view: View) => void;
+  onOpenMenu: () => void;
 }
 
 const tabs: {label: string;value: View;}[] = [
@@ -36,9 +38,10 @@ const accountLinks: {
 { label: 'Deloghează-te', icon: LogOutIcon }];
 
 
-export function Topbar({ view, onNavigate }: TopbarProps) {
+export function Topbar({ view, onNavigate, onOpenMenu }: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { activeUser } = useWorkspace();
+  const { runLabel } = useUiActions();
   const displayName = activeUser ?? 'Andreas Bălan';
   const initials = displayName.
   split(' ').
@@ -51,6 +54,7 @@ export function Topbar({ view, onNavigate }: TopbarProps) {
       <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
         <button
           type="button"
+          onClick={onOpenMenu}
           className="flex h-10 w-10 items-center justify-center rounded-lg text-ink transition-colors duration-150 ease-out hover:bg-slate-50 lg:hidden"
           aria-label="Deschide meniul">
           
@@ -138,10 +142,9 @@ export function Topbar({ view, onNavigate }: TopbarProps) {
                   type="button"
                   role="menuitem"
                   onClick={() => {
-                    if (item.view) {
-                      setMenuOpen(false);
-                      onNavigate(item.view);
-                    }
+                    setMenuOpen(false);
+                    if (item.view) onNavigate(item.view);
+                    else runLabel('Deloghează-te');
                   }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink-700 transition-colors duration-150 ease-out hover:bg-slate-50 hover:text-brand-700">
                   

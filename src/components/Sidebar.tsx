@@ -26,6 +26,7 @@ import {
 import { crmModules, type CrmModule } from '../data/modules';
 import { subAccounts, subAccountsTotal } from '../data/subAccounts';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { useUiActions } from '../contexts/UiActionsContext';
 
 export type View =
 'dashboard' |
@@ -147,6 +148,7 @@ export function Sidebar({
   const [subAccountsOpen, setSubAccountsOpen] = useState(false);
   const { unseenTasksFor, unseenSectionFor, markSectionSeen, openTasksFor } =
   useWorkspace();
+  const { runLabel } = useUiActions();
 
   const impersonating = activeUser !== null;
   const navItems = impersonating ?
@@ -155,7 +157,7 @@ export function Sidebar({
   const newTasks = activeUser ? unseenTasksFor(activeUser).length : 0;
 
   return (
-    <aside className="relative hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+    <aside className="relative z-50 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:shadow-2xl">
       <button
         type="button"
         onClick={onCollapse}
@@ -190,13 +192,12 @@ export function Sidebar({
             Întoarce-te în contul tău
           </button> :
 
-        <button
-          type="button"
-          onClick={() => setPickerOpen((value) => !value)}
-          aria-expanded={pickerOpen}
-          aria-haspopup="menu"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 font-display text-sm font-bold text-white transition-colors duration-150 ease-out hover:bg-brand-600">
-          
+          <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => runLabel('Proiect nou')}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 font-display text-sm font-bold text-white transition-colors duration-150 ease-out hover:bg-brand-600">
+            
             <PlusIcon
             className="h-4 w-4"
             strokeWidth={2.5}
@@ -204,6 +205,15 @@ export function Sidebar({
           
             Proiect nou
           </button>
+          <button
+            type="button"
+            onClick={() => setPickerOpen((value) => !value)}
+            aria-expanded={pickerOpen}
+            aria-haspopup="menu"
+            className="flex w-full items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold text-brand-600 hover:bg-brand-50">
+            Adaugă un modul
+          </button>
+          </div>
         }
 
         {pickerOpen && !impersonating &&
@@ -467,6 +477,7 @@ export function Sidebar({
             </p>
             <button
             type="button"
+            onClick={() => onNavigate('billing')}
             className="mt-3 text-sm font-bold text-brand-600 underline-offset-4 hover:underline">
             
               Extinde echipa →
