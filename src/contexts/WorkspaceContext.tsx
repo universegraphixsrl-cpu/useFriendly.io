@@ -17,6 +17,8 @@ import { bookingCalendars, type BookingCalendar } from '../data/calendars';
 import { subAccounts } from '../data/subAccounts';
 import { initialMessages, type TeamMessage } from '../data/notifications';
 import { projects as seedProjects, type Project } from '../data/crm';
+import { supabaseConfigured } from '../lib/supabase';
+import { useLeadsSync } from '../lib/leadsSync';
 
 const subAccountNames = subAccounts.flatMap((group) => group.members);
 
@@ -89,6 +91,9 @@ interface WorkspaceValue {
     email: string;
     phone: string;
   }) => void;
+  /** Starea legăturii cu baza de date: 'idle' = rulăm pe date fictive */
+  dataStatus: 'idle' | 'loading' | 'ready' | 'error';
+  dataError: string | null;
 }
 
 export type NotifiedSection = 'leads' | 'calendar' | 'materials';
@@ -97,8 +102,16 @@ const WorkspaceContext = createContext<WorkspaceValue | null>(null);
 
 export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
   const [activeUser, setActiveUser] = useState<string | null>(null);
-  const [lists, setLists] = useState<LeadList[]>(initialLeadLists);
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  /**
+   * Cu Supabase conectat pornim gol și încărcăm datele reale din bază.
+   * Fără chei de Supabase rămânem pe datele fictive, ca înainte.
+   */
+  const [lists, setLists] = useState<LeadList[]>(
+    supabaseConfigured ? [] : initialLeadLists
+  );
+  const [leads, setLeads] = useState<Lead[]>(
+    supabaseConfigured ? [] : initialLeads
+  );
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [categories, setCategories] =
   useState<TaskCategory[]>(initialCategories);
@@ -135,6 +148,15 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
       });
       return initial;
     });
+
+  /** Încarcă din Supabase la pornire și salvează automat modificările */
+  const leadsSync = useLeadsSync({
+    enabled: supabaseConfigured,
+    lists,
+    leads,
+    setLists,
+    setLeads
+  });
 
   const sectionIdsFor = (name: string, section: NotifiedSection): string[] => {
     if (section === 'leads') {
@@ -277,9 +299,13 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
           documents: []
         };
         return [lead, ...current];
-      })
+      }),
+      dataStatus: leadsSync.status,
+      dataError: leadsSync.error
     }),
     [
+    leadsSync.status,
+    leadsSync.error,
     activeUser,
     lists,
     leads,

@@ -13,6 +13,7 @@ import {
 import type { View } from './Sidebar';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useUiActions } from '../contexts/UiActionsContext';
+import { useAuth } from '../contexts/AuthContext';
 import { NotificationsPanel } from './NotificationsPanel';
 
 interface TopbarProps {
@@ -42,7 +43,9 @@ export function Topbar({ view, onNavigate, onOpenMenu }: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { activeUser } = useWorkspace();
   const { runLabel } = useUiActions();
-  const displayName = activeUser ?? 'Andreas Bălan';
+  const { session, profile, demoMode, signOut } = useAuth();
+  const displayName =
+  activeUser ?? profile?.full_name ?? 'Andreas Bălan';
   const initials = displayName.
   split(' ').
   map((part) => part[0]).
@@ -130,9 +133,10 @@ export function Topbar({ view, onNavigate, onOpenMenu }: TopbarProps) {
                       {displayName}
                     </p>
                     <p className="text-xs text-ink-500">
-                      {activeUser ?
+                      {session?.user?.email ?? (
+                    activeUser ?
                     `${activeUser.split(' ')[0].toLowerCase()}@eliteclosers.ro` :
-                    'andreas@eliteclosers.ro'}
+                    'andreas@eliteclosers.ro')}
                     </p>
                   </div>
 
@@ -144,7 +148,8 @@ export function Topbar({ view, onNavigate, onOpenMenu }: TopbarProps) {
                   onClick={() => {
                     setMenuOpen(false);
                     if (item.view) onNavigate(item.view);
-                    else runLabel('Deloghează-te');
+                    else if (demoMode) runLabel('Deloghează-te');
+                    else void signOut();
                   }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink-700 transition-colors duration-150 ease-out hover:bg-slate-50 hover:text-brand-700">
                   

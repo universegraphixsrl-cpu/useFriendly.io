@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# folder creat de aplicatia Claude, nu face parte din proiect
+Claude outputs/

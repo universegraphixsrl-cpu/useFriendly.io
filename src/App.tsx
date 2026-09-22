@@ -37,6 +37,11 @@ import {
   useWorkspace } from
 './contexts/WorkspaceContext';
 import { UiActionsProvider } from './contexts/UiActionsContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
+import { Site } from './pages/Site';
+import { WelcomeDashboard } from './pages/WelcomeDashboard';
 import { roleOf } from './data/subAccounts';
 import { crmModules, type CrmModule } from './data/modules';
 import { modulePath, viewFromPath, viewPath } from './appRoutes';
@@ -201,6 +206,85 @@ function ModulePage({
 
 }
 
+/** Ecranul de bun venit al unui cont nou, gol. */
+function WelcomeRoute() {
+  const navigate = useNavigate();
+  const { profile } = useAuth();
+  const firstName = (profile?.full_name ?? '').split(' ')[0] ?? '';
+
+  return (
+    <WelcomeDashboard
+      name={firstName}
+      onOpenModules={() => navigate('/modules')}
+      onOpenTutorials={() => navigate('/tutorials')} />);
+
+
+}
+
+/** Ce vede cineva care nu e logat: site-ul de prezentare, login și înregistrare. */
+function PublicArea() {
+  const navigate = useNavigate();
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={
+        <Login
+          onBackToSite={() => navigate('/')}
+          onGoToSignup={() => navigate('/signup')} />
+
+        } />
+
+      <Route
+        path="/signup"
+        element={
+        <Signup
+          onBackToSite={() => navigate('/')}
+          onGoToLogin={() => navigate('/login')} />
+
+        } />
+
+      <Route
+        path="*"
+        element={
+        <Site
+          onLogin={() => navigate('/login')}
+          onSignup={() => navigate('/signup')} />
+
+        } />
+
+    </Routes>);
+
+}
+
+/**
+ * Poarta de intrare: fără cont se vede doar site-ul public, niciodată CRM-ul.
+ *
+ * Singura excepție e lucrul pe calculatorul tău, fără chei de Supabase
+ * (`npm run dev`): atunci aplicația pornește direct în CRM, pe datele
+ * fictive, ca să poți lucra la design fără bază de date. În varianta
+ * publicată excepția NU se aplică — dacă lipsesc cheile, vizitatorii văd
+ * site-ul de prezentare, nu CRM-ul.
+ */
+function AuthGate({ children }: {children: React.ReactNode;}) {
+  const { loading, session, demoMode } = useAuth();
+
+  if (demoMode && import.meta.env.DEV) return <>{children}</>;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand-500" />
+      </div>);
+
+  }
+
+  if (!session) return <PublicArea />;
+
+  return <>{children}</>;
+}
+
 export function App() {
   const [addedModules, setAddedModules] = useState<CrmModule[]>([]);
   const [hiddenTutorials, setHiddenTutorials] = useState<string[]>([]);
@@ -216,6 +300,8 @@ export function App() {
 
   return (
     <BrowserRouter>
+      <AuthProvider>
+        <AuthGate>
       <WorkspaceProvider>
         <UiActionsProvider>
           <Routes>
@@ -232,6 +318,7 @@ export function App() {
               }>
               
               <Route path="/" element={<DashboardRoute />} />
+              <Route path="/welcome" element={<WelcomeRoute />} />
               <Route path="/leads" element={<Leads />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/calendar" element={<Calendar />} />
@@ -283,6 +370,8 @@ export function App() {
           </Routes>
         </UiActionsProvider>
       </WorkspaceProvider>
+        </AuthGate>
+      </AuthProvider>
     </BrowserRouter>);
 
 }
