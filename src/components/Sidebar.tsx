@@ -24,9 +24,7 @@ import {
   ChevronLeftIcon } from
 'lucide-react';
 import { crmModules, type CrmModule } from '../data/modules';
-import { subAccounts, subAccountsTotal } from '../data/subAccounts';
-import { useAuth } from '../contexts/AuthContext';
-import { supabaseConfigured } from '../lib/supabase';
+import { useTeam } from '../lib/team';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useUiActions } from '../contexts/UiActionsContext';
 
@@ -148,11 +146,9 @@ export function Sidebar({
 }: SidebarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [subAccountsOpen, setSubAccountsOpen] = useState(false);
-  const { teamMembers } = useAuth();
+  const { groups: subAccounts, total } = useTeam();
   /** Câți oameni au cont, în afară de cel logat */
-  const teamCount = supabaseConfigured ?
-  Math.max(0, teamMembers.length - 1) :
-  subAccountsTotal;
+  const teamCount = Math.max(0, total - 1);
   const { unseenTasksFor, unseenSectionFor, markSectionSeen, openTasksFor } =
   useWorkspace();
   const { runLabel } = useUiActions();

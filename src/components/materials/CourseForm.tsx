@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckIcon } from 'lucide-react';
 import { categoryColors } from '../../data/tasks';
-import { subAccounts, subAccountsTotal } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 
 const TITLE_LIMIT = 40;
 
@@ -16,6 +16,8 @@ interface CourseFormProps {
 }
 
 export function CourseForm({ onCreate, onCancel }: CourseFormProps) {
+  const { groups: subAccounts, total: subAccountsTotal } = useTeam();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(categoryColors[0]);

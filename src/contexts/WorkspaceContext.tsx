@@ -23,7 +23,14 @@ import { useTasksSync } from '../lib/tasksSync';
 import { useCalendarsSync } from '../lib/calendarsSync';
 import { useProjectsSync } from '../lib/projectsSync';
 
-const subAccountNames = subAccounts.flatMap((group) => group.members);
+/**
+ * Numele folosite ca să marcăm ce a văzut fiecare om la pornire.
+ * Cu baza de date conectată, echipa reală se încarcă separat — aici
+ * pornim de la zero ca să nu inventăm oameni.
+ */
+const subAccountNames = supabaseConfigured ?
+[] :
+subAccounts.flatMap((group) => group.members);
 
 export interface DayAvailability {
   day: string;

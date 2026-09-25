@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { PlusIcon, CheckIcon, XIcon, SendIcon, UsersIcon } from 'lucide-react';
-import { subAccounts } from '../data/subAccounts';
+import React, { useMemo, useState } from 'react';
+import { PlusIcon, CheckIcon, XIcon, SendIcon, UsersIcon, LoaderIcon } from 'lucide-react';
+import { subAccounts as demoSubAccounts } from '../data/subAccounts';
 import { categoryColors } from '../data/tasks';
+import { useTeam, inviteMember } from '../lib/team';
+import { supabaseConfigured, type Role } from '../lib/supabase';
 
 interface Category {
   role: string;
@@ -13,7 +15,7 @@ interface Category {
 const NAME_LIMIT = 30;
 const SEAT_LIMIT = 50;
 
-const initialCategories: Category[] = subAccounts.map((group) => ({
+const initialCategories: Category[] = demoSubAccounts.map((group) => ({
   role: group.role,
   color: group.color,
   description:
@@ -35,7 +37,7 @@ interface Member {
   status: 'Activ' | 'Pending';
 }
 
-const initialMembers: Member[] = subAccounts.flatMap((group) =>
+const demoMembers: Member[] = demoSubAccounts.flatMap((group) =>
 group.members.map((member) => ({
   id: `${group.role}-${member}`,
   name: member,
@@ -51,28 +53,106 @@ group.members.map((member) => ({
 }))
 );
 
+/** „Closers” în interfață înseamnă rolul `closer` în baza de date */
+const ROLE_OF_GROUP: Record<string, Role> = {
+  Closers: 'closer',
+  Callers: 'caller',
+  Managers: 'manager',
+  Marketers: 'marketer'
+};
+
 export function CreateSubAccount() {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const { groups, profiles } = useTeam();
+
+  /** Categoriile existente vin din rolurile oamenilor care au cont */
+  const liveCategories: Category[] = groups.map((group) => ({
+    role: group.role,
+    color: group.color,
+    description:
+    group.role === 'Closers' ?
+    'Închid apelurile de vânzare și gestionează ofertele.' :
+    group.role === 'Callers' ?
+    'Califică leadurile și programează apelurile.' :
+    group.role === 'Managers' ?
+    'Coordonează echipa și urmăresc targeturile.' :
+    'Rulează campaniile și conținutul de achiziție.',
+    members: group.members.length
+  }));
+
+  const [categories, setCategories] = useState<Category[]>(
+    supabaseConfigured ? liveCategories : initialCategories
+  );
   const [selected, setSelected] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(categoryColors[0]);
-  const [members, setMembers] = useState<Member[]>(initialMembers);
+  const [members, setMembers] = useState<Member[]>(
+    supabaseConfigured ? [] : demoMembers
+  );
+  const [sending, setSending] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+  const [inviteOk, setInviteOk] = useState('');
+
+  /** Oamenii cu cont, în forma afișată în tabel */
+  const liveMembers: Member[] = useMemo(
+    () =>
+    profiles.map((person) => ({
+      id: person.id,
+      name: person.full_name,
+      email: '—',
+      role:
+      groups.find((group) => group.members.includes(person.full_name))?.role ??
+      'Sub-account',
+      status: 'Activ' as const
+    })),
+    [profiles, groups]
+  );
+
+  /** Invitațiile abia trimise apar deasupra celor existente */
+  const shownMembers = supabaseConfigured ?
+  [...members, ...liveMembers.filter(
+    (person) => !members.some((item) => item.name === person.name)
+  )] :
+  members;
   const [memberName, setMemberName] = useState('');
   const [memberEmail, setMemberEmail] = useState('');
 
   const colorOf = (role: string) =>
   categories.find((category) => category.role === role)?.color ?? '#94a3b8';
 
-  const sendInvite = () => {
+  const sendInvite = async () => {
     const trimmedName = memberName.trim();
-    if (!trimmedName || !selected) return;
+    const trimmedEmail = memberEmail.trim();
+    if (!trimmedName || !selected || sending) return;
+
+    setInviteError('');
+    setInviteOk('');
+
+    if (supabaseConfigured) {
+      if (!trimmedEmail) {
+        setInviteError('Emailul e obligatoriu — acolo ajunge invitația.');
+        return;
+      }
+      setSending(true);
+      const message = await inviteMember({
+        email: trimmedEmail,
+        fullName: trimmedName,
+        role: ROLE_OF_GROUP[selected] ?? 'caller'
+      });
+      setSending(false);
+      if (message) {
+        setInviteError(message);
+        return;
+      }
+      setInviteOk(`Invitație trimisă pe ${trimmedEmail}.`);
+    }
+
     setMembers((current) => [
     {
       id: `member-${Date.now()}`,
       name: trimmedName,
-      email: memberEmail.trim() || '—',
+      email: trimmedEmail || '—',
       role: selected,
       status: 'Pending'
     },
@@ -115,7 +195,7 @@ export function CreateSubAccount() {
             Pachet Pro
           </p>
           <p className="mt-1 font-display text-xl font-extrabold tracking-tight text-ink">
-            {members.length}{' '}
+            {shownMembers.length}{' '}
             <span className="text-base font-bold text-ink-500">
               / {SEAT_LIMIT} sub-accounts
             </span>
@@ -127,12 +207,12 @@ export function CreateSubAccount() {
             <div
               className="h-full rounded-full bg-brand-500"
               style={{
-                width: `${Math.min(100, members.length / SEAT_LIMIT * 100)}%`
+                width: `${Math.min(100, shownMembers.length / SEAT_LIMIT * 100)}%`
               }} />
             
           </div>
           <p className="mt-2 text-xs text-ink-500">
-            {Math.max(0, SEAT_LIMIT - members.length)} locuri disponibile
+            {Math.max(0, SEAT_LIMIT - shownMembers.length)} locuri disponibile
           </p>
         </div>
       </div>
@@ -365,14 +445,29 @@ export function CreateSubAccount() {
             </div>
           </div>
 
+          {inviteError &&
+        <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+              {inviteError}
+            </p>
+        }
+          {inviteOk &&
+        <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+              {inviteOk}
+            </p>
+        }
+
           <button
           type="button"
           onClick={sendInvite}
-          disabled={memberName.trim().length === 0}
+          disabled={memberName.trim().length === 0 || sending}
           className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-500 px-3.5 py-2.5 font-display text-sm font-bold text-white transition-colors duration-150 ease-out hover:bg-brand-600 disabled:bg-slate-200 disabled:text-ink-500">
           
-            <SendIcon className="h-4 w-4" aria-hidden="true" />
-            Trimite invitația
+            {sending ?
+          <LoaderIcon className="h-4 w-4 animate-spin" aria-hidden="true" /> :
+
+          <SendIcon className="h-4 w-4" aria-hidden="true" />
+          }
+            {sending ? 'Se trimite…' : 'Trimite invitația'}
           </button>
         </section>
       }
@@ -399,7 +494,7 @@ export function CreateSubAccount() {
         </div>
 
         <ul className="divide-y divide-slate-100">
-          {members.map((member) =>
+          {shownMembers.map((member) =>
           <li
             key={member.id}
             className="flex flex-wrap items-center gap-4 px-5 py-3.5">

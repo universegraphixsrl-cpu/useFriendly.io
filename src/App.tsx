@@ -42,7 +42,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Site } from './pages/Site';
 import { WelcomeDashboard } from './pages/WelcomeDashboard';
-import { roleOf } from './data/subAccounts';
+import { useTeam, roleOfIn } from './lib/team';
 import { crmModules, type CrmModule } from './data/modules';
 import { modulePath, viewFromPath, viewPath } from './appRoutes';
 
@@ -57,6 +57,8 @@ function AppShell({
   setTheme: (theme: 'light' | 'dark') => void;
 }) {
   const { activeUser, setActiveUser } = useWorkspace();
+  const { groups: teamGroups } = useTeam();
+  const roleOf = (name: string) => roleOfIn(teamGroups, name);
   const navigate = useNavigate();
   const location = useLocation();
   const view = viewFromPath(location.pathname);

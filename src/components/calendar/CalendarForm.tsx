@@ -9,7 +9,7 @@ import {
   BellRingIcon } from
 'lucide-react';
 import { categoryColors } from '../../data/tasks';
-import { subAccounts } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 import type { CalendarMember } from '../../data/calendars';
 
 const NAME_LIMIT = 40;
@@ -42,15 +42,18 @@ interface CalendarFormProps {
   onCancel: () => void;
 }
 
-const everyone = subAccounts.flatMap((group) =>
-group.members.map((member) => ({ name: member, role: group.role }))
-);
-
 export function CalendarForm({
   team = false,
   onCreate,
   onCancel
 }: CalendarFormProps) {
+  const { groups: subAccounts } = useTeam();
+
+  /** Toți oamenii cu cont, de invitat într-un calendar de echipă */
+  const everyone = subAccounts.flatMap((group) =>
+  group.members.map((member) => ({ name: member, role: group.role }))
+  );
+
   const [members, setMembers] = useState<string[]>([]);
 
   const toggleMember = (name: string) =>

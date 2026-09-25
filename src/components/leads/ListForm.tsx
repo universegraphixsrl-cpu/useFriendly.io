@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckIcon, XIcon } from 'lucide-react';
 import { categoryColors } from '../../data/tasks';
-import { subAccounts } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 
 interface ListFormProps {
   onCreate: (
@@ -14,6 +14,8 @@ interface ListFormProps {
 }
 
 export function ListForm({ onCreate, onCancel }: ListFormProps) {
+  const { groups: subAccounts } = useTeam();
+
   const [name, setName] = useState('');
   const [detail, setDetail] = useState('');
   const [color, setColor] = useState(categoryColors[0]);

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDownIcon, CheckIcon } from 'lucide-react';
-import { subAccounts } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 
 interface AgentFilterProps {
   /** null = toată echipa */
@@ -17,6 +17,8 @@ export function AgentFilter({
   counts,
   total
 }: AgentFilterProps) {
+  const { groups: subAccounts } = useTeam();
+
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

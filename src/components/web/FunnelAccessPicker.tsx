@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { UsersRoundIcon, ChevronDownIcon, CheckIcon } from 'lucide-react';
-import { subAccounts, subAccountsTotal } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 
 interface FunnelAccessPickerProps {
   access: string[];
@@ -12,6 +12,8 @@ export function FunnelAccessPicker({
   access,
   onChange
 }: FunnelAccessPickerProps) {
+  const { groups: subAccounts, total: subAccountsTotal } = useTeam();
+
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { XIcon, CheckIcon, UsersRoundIcon, BellRingIcon } from 'lucide-react';
-import { subAccounts } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 import type { TaskAssignee, TaskCategory } from '../../data/tasks';
 
 type Mode = 'all' | 'role' | 'manual';
@@ -16,24 +16,27 @@ interface TeamTaskFormProps {
   onCancel: () => void;
 }
 
-const everyone: TaskAssignee[] = subAccounts.flatMap((group) =>
-group.members.map((member) => ({
-  name: member,
-  role: group.role,
-  done: false
-}))
-);
-
 export function TeamTaskForm({
   categories,
   onCreate,
   onCancel
 }: TeamTaskFormProps) {
+  const { groups: subAccounts } = useTeam();
+
+  /** Toți oamenii cu cont, gata de atribuit pe un task */
+  const everyone: TaskAssignee[] = subAccounts.flatMap((group) =>
+  group.members.map((member) => ({
+    name: member,
+    role: group.role,
+    done: false
+  }))
+  );
+
   const [title, setTitle] = useState('');
   const [detail, setDetail] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '');
   const [mode, setMode] = useState<Mode>('all');
-  const [role, setRole] = useState(subAccounts[0].role);
+  const [role, setRole] = useState(subAccounts[0]?.role ?? 'Closers');
   const [manual, setManual] = useState<string[]>([]);
 
   const assignees: TaskAssignee[] =

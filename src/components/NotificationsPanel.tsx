@@ -7,7 +7,7 @@ import {
   PenSquareIcon,
   ActivityIcon } from
 'lucide-react';
-import { subAccounts } from '../data/subAccounts';
+import { useTeam } from '../lib/team';
 import {
   systemNotifications,
   agentNotifications,
@@ -17,11 +17,16 @@ import { useWorkspace } from '../contexts/WorkspaceContext';
 
 const ADMIN = 'Andreas Bălan';
 
-const colorOf = (name: string) =>
-subAccounts.find((group) => group.members.includes(name))?.color ?? '#0f1729';
+const colorIn = (
+groups: { color: string; members: string[] }[],
+name: string) =>
+groups.find((group) => group.members.includes(name))?.color ?? '#0f1729';
 
 /** Clopoțelul din bara de sus: notificări de sistem + chat cu echipa */
 export function NotificationsPanel() {
+  const { groups: subAccounts } = useTeam();
+  const colorOf = (name: string) => colorIn(subAccounts, name);
+
   const { activeUser, messages, sendMessage, markMessagesRead } = useWorkspace();
   const isSub = activeUser !== null;
   const me = activeUser ?? ADMIN;

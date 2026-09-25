@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UsersRoundIcon, ChevronDownIcon, CheckIcon } from 'lucide-react';
-import { subAccounts, subAccountsTotal } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 
 interface CourseAccessProps {
   access: string[];
@@ -8,6 +8,8 @@ interface CourseAccessProps {
 }
 
 export function CourseAccess({ access, onApply }: CourseAccessProps) {
+  const { groups: subAccounts, total: subAccountsTotal } = useTeam();
+
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>(access);
 

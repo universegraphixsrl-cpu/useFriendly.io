@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { UsersRoundIcon, ChevronDownIcon, CheckIcon } from 'lucide-react';
-import { subAccounts, subAccountsTotal } from '../../data/subAccounts';
+import { useTeam } from '../../lib/team';
 
 interface ListAccessProps {
   access: string[];
@@ -9,6 +9,8 @@ interface ListAccessProps {
 
 /** Meniul de acces la o listă de leaduri — se aplică doar la „Salvează accesul” */
 export function ListAccess({ access, onApply }: ListAccessProps) {
+  const { groups: subAccounts, total: subAccountsTotal } = useTeam();
+
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>(access);
   const containerRef = useRef<HTMLDivElement>(null);
