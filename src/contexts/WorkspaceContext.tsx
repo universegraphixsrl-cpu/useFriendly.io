@@ -19,6 +19,8 @@ import { initialMessages, type TeamMessage } from '../data/notifications';
 import { projects as seedProjects, type Project } from '../data/crm';
 import { supabaseConfigured } from '../lib/supabase';
 import { useLeadsSync } from '../lib/leadsSync';
+import { useTasksSync } from '../lib/tasksSync';
+import { useCalendarsSync } from '../lib/calendarsSync';
 
 const subAccountNames = subAccounts.flatMap((group) => group.members);
 
@@ -112,12 +114,16 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
   const [leads, setLeads] = useState<Lead[]>(
     supabaseConfigured ? [] : initialLeads
   );
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [categories, setCategories] =
-  useState<TaskCategory[]>(initialCategories);
+  const [tasks, setTasks] = useState<Task[]>(
+    supabaseConfigured ? [] : initialTasks
+  );
+  const [categories, setCategories] = useState<TaskCategory[]>(
+    supabaseConfigured ? [] : initialCategories
+  );
   const [courses, setCourses] = useState<Course[]>(initialCourses);
-  const [calendars, setCalendars] =
-  useState<BookingCalendar[]>(bookingCalendars);
+  const [calendars, setCalendars] = useState<BookingCalendar[]>(
+    supabaseConfigured ? [] : bookingCalendars
+  );
   const [availability, setAvailability] = useState<
     Record<string, DayAvailability[]>>(
     {});
@@ -157,6 +163,31 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     setLists,
     setLeads
   });
+
+  const tasksSync = useTasksSync({
+    enabled: supabaseConfigured,
+    tasks,
+    categories,
+    setTasks,
+    setCategories
+  });
+
+  const calendarsSync = useCalendarsSync({
+    enabled: supabaseConfigured,
+    calendars,
+    setCalendars
+  });
+
+  /** O singură stare pentru toate cele trei legături cu baza de date */
+  const syncStatuses = [leadsSync.status, tasksSync.status, calendarsSync.status];
+  const combinedStatus: 'idle' | 'loading' | 'ready' | 'error' =
+  syncStatuses.includes('error') ?
+  'error' :
+  syncStatuses.includes('loading') ?
+  'loading' :
+  syncStatuses.every((item) => item === 'ready') ?
+  'ready' :
+  'idle';
 
   const sectionIdsFor = (name: string, section: NotifiedSection): string[] => {
     if (section === 'leads') {
@@ -300,12 +331,14 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
         };
         return [lead, ...current];
       }),
-      dataStatus: leadsSync.status,
-      dataError: leadsSync.error
+      dataStatus: combinedStatus,
+      dataError: leadsSync.error ?? tasksSync.error ?? calendarsSync.error
     }),
     [
-    leadsSync.status,
+    combinedStatus,
     leadsSync.error,
+    tasksSync.error,
+    calendarsSync.error,
     activeUser,
     lists,
     leads,
