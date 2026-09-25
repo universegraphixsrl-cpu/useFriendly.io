@@ -1,30 +1,66 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { TrendingUpIcon, TrendingDownIcon, ChevronDownIcon, CheckIcon } from 'lucide-react';
-import { pipelineOptions, type PipelineData } from '../data/pipelines';
+import { pipelineOptions as demoPipelines, type PipelineData } from '../data/pipelines';
+import { useWorkspace } from '../contexts/WorkspaceContext';
+import { supabaseConfigured } from '../lib/supabase';
+import { pipelinesFromLeads, safePercent } from '../lib/pipelineFromLeads';
 
 const formatPercent = (value: number) =>
 `${value.toFixed(1).replace('.', ',')}%`;
 
 export function PipelineSummary() {
-  const [selected, setSelected] = useState<PipelineData>(pipelineOptions[0]);
+  const { leads, lists } = useWorkspace();
+
+  /**
+   * Cifrele se calculează din leadurile reale. Fără bază de date (lucru
+   * local pe date fictive) rămân exemplele din `data/pipelines`.
+   */
+  const pipelineOptions = useMemo(
+    () =>
+    supabaseConfigured ? pipelinesFromLeads(leads, lists) : demoPipelines,
+    [leads, lists]
+  );
+
+  const [selectedId, setSelectedId] = useState<string>(
+    pipelineOptions[0]?.id ?? 'toate'
+  );
   const [open, setOpen] = useState(false);
+
+  const selected: PipelineData =
+  pipelineOptions.find((item) => item.id === selectedId) ??
+  pipelineOptions[0] ?? {
+    id: 'toate',
+    name: 'Toate leadurile',
+    value: 0,
+    delta: 0,
+    inscrisiWebinar: 0,
+    apeluriProgramate: 0,
+    prezentiApel: 0,
+    vanzariNoi: 0,
+    integrale: 0,
+    rate: 0,
+    avansuri: 0
+  };
+
+  /** Contul e gol: nu are rost să arătăm procente sau comparații */
+  const empty = selected.inscrisiWebinar === 0;
 
   const stages = [
   { label: 'Înscriși webinar', count: selected.inscrisiWebinar },
   {
     label: 'Apeluri programate',
     count: selected.apeluriProgramate,
-    note: `(${formatPercent(selected.apeluriProgramate / selected.inscrisiWebinar * 100)} din înscriși)`
+    note: `(${formatPercent(safePercent(selected.apeluriProgramate, selected.inscrisiWebinar))} din înscriși)`
   },
   {
     label: 'Prezenți la apel',
     count: selected.prezentiApel,
-    note: `(${formatPercent(selected.prezentiApel / selected.apeluriProgramate * 100)} din apeluri)`
+    note: `(${formatPercent(safePercent(selected.prezentiApel, selected.apeluriProgramate))} din apeluri)`
   },
   {
     label: 'Vânzări noi',
     count: selected.vanzariNoi,
-    note: `(${formatPercent(selected.vanzariNoi / selected.prezentiApel * 100)} din prezenți)`
+    note: `(${formatPercent(safePercent(selected.vanzariNoi, selected.prezentiApel))} din prezenți)`
   }];
 
 
@@ -34,8 +70,8 @@ export function PipelineSummary() {
   { label: 'Avansuri', count: selected.avansuri }].
   map((item) => ({
     ...item,
-    note: `(${formatPercent(item.count / selected.vanzariNoi * 100)} din vânzări)`,
-    width: item.count / selected.vanzariNoi * 100
+    note: `(${formatPercent(safePercent(item.count, selected.vanzariNoi))} din vânzări)`,
+    width: safePercent(item.count, selected.vanzariNoi)
   }));
 
   return (
@@ -49,13 +85,22 @@ export function PipelineSummary() {
             id="pipeline-title"
             className="font-display text-xs font-bold uppercase tracking-wide text-brand-300">
             
-            Pipeline august · {selected.name}
+            Pipeline {new Date().toLocaleDateString('ro-RO', { month: 'long' })} · {selected.name}
           </p>
           <p className="mt-2 font-display text-4xl font-extrabold tracking-tight">
             {selected.value.toLocaleString('ro-RO')} €
           </p>
+          {empty ?
+          <p className="mt-1 text-sm text-slate-300">
+              Încă niciun lead — cifrele apar pe măsură ce intră.
+            </p> :
+          selected.delta === 0 ?
+          <p className="mt-1 text-sm text-slate-300">
+              Fără date pentru luna trecută, deci nu avem cu ce compara.
+            </p> :
+
           <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-300">
-            {selected.delta >= 0 ?
+              {selected.delta > 0 ?
             <TrendingUpIcon
               className="h-4 w-4 text-brand-300"
               aria-hidden="true" /> :
@@ -66,9 +111,10 @@ export function PipelineSummary() {
               aria-hidden="true" />
 
             }
-            {selected.delta > 0 ? '+' : ''}
-            {formatPercent(selected.delta)} față de luna trecută
-          </p>
+              {selected.delta > 0 ? '+' : ''}
+              {formatPercent(selected.delta)} față de luna trecută
+            </p>
+          }
         </div>
 
         <div className="flex flex-col items-end gap-5">
@@ -110,7 +156,7 @@ export function PipelineSummary() {
                         role="option"
                         aria-selected={active}
                         onClick={() => {
-                          setSelected(option);
+                          setSelectedId(option.id);
                           setOpen(false);
                         }}
                         className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-semibold transition-colors duration-150 ease-out ${

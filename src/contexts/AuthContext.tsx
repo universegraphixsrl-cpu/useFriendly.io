@@ -19,6 +19,8 @@ interface AuthValue {
   profile: Profile | null;
   /** true dacă proiectul nu are chei Supabase — rulăm pe date fictive */
   demoMode: boolean;
+  /** Toți oamenii cu cont în acest CRM (pentru atribuiri și numărători) */
+  teamMembers: Profile[];
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   /** Trimite pe email un link de resetare a parolei */
@@ -41,6 +43,7 @@ export function AuthProvider({ children }: {children: React.ReactNode;}) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
 
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -97,12 +100,40 @@ export function AuthProvider({ children }: {children: React.ReactNode;}) {
     };
   }, [session?.user?.id]);
 
+  /** Lista echipei: toți cei cu profil în acest CRM */
+  useEffect(() => {
+    if (!session?.user) {
+      setTeamMembers([]);
+      return;
+    }
+
+    let active = true;
+
+    supabase.
+    from('profiles').
+    select('id, full_name, role, color').
+    order('full_name', { ascending: true }).
+    then(({ data, error: loadError }) => {
+      if (!active) return;
+      if (loadError) {
+        console.error('[Supabase] Nu am putut citi echipa:', loadError.message);
+        return;
+      }
+      setTeamMembers((data ?? []) as Profile[]);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.id]);
+
   const value = useMemo<AuthValue>(
     () => ({
       loading,
       session,
       profile,
       demoMode: !supabaseConfigured,
+      teamMembers,
       signIn: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -156,7 +187,7 @@ export function AuthProvider({ children }: {children: React.ReactNode;}) {
         return error.message;
       }
     }),
-    [loading, session, profile]
+    [loading, session, profile, teamMembers]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

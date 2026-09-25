@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BellIcon, SendIcon } from 'lucide-react';
-import { reminders, type Reminder } from '../data/crm';
+import { reminders as demoReminders, type Reminder } from '../data/crm';
 import { useUiActions } from '../contexts/UiActionsContext';
+import { useWorkspace } from '../contexts/WorkspaceContext';
+import { supabaseConfigured } from '../lib/supabase';
+import { remindersFromTasks } from '../lib/remindersFromTasks';
 
 const channelStyles: Record<Reminder['channel'], string> = {
   Email: 'bg-brand-50 text-brand-700',
@@ -12,6 +15,20 @@ const channelStyles: Record<Reminder['channel'], string> = {
 
 export function RemindersPanel() {
   const { runLabel } = useUiActions();
+  const { tasks } = useWorkspace();
+
+  /**
+   * Reminderele de azi ies din task-urile cu termen azi. Fără bază de date
+   * (lucru local) rămân exemplele din `data/crm`.
+   */
+  const reminders = useMemo(
+    () => supabaseConfigured ? remindersFromTasks(tasks) : demoReminders,
+    [tasks]
+  );
+
+  const pending = reminders.filter(
+    (item) => item.meta.toLowerCase().includes('în așteptare')
+  ).length;
   return (
     <section
       aria-labelledby="reminders-title"
@@ -29,7 +46,11 @@ export function RemindersPanel() {
               
               Remindere azi
             </h2>
-            <p className="text-xs text-ink-500">4 programate · 1 în așteptare</p>
+            <p className="text-xs text-ink-500">
+              {reminders.length === 0 ?
+              'Niciunul programat azi' :
+              `${reminders.length} programate · ${pending} în așteptare`}
+            </p>
           </div>
         </div>
         <button
@@ -41,6 +62,13 @@ export function RemindersPanel() {
           Trimite
         </button>
       </div>
+
+      {reminders.length === 0 &&
+      <p className="px-5 py-6 text-sm text-ink-500">
+          Nu ai niciun task cu termen azi. Reminderele apar aici pe măsură ce
+          îți programezi task-uri.
+        </p>
+      }
 
       <ol className="px-5 py-4">
         {reminders.map((reminder, index) =>

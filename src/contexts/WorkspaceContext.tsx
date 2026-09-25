@@ -21,6 +21,7 @@ import { supabaseConfigured } from '../lib/supabase';
 import { useLeadsSync } from '../lib/leadsSync';
 import { useTasksSync } from '../lib/tasksSync';
 import { useCalendarsSync } from '../lib/calendarsSync';
+import { useProjectsSync } from '../lib/projectsSync';
 
 const subAccountNames = subAccounts.flatMap((group) => group.members);
 
@@ -129,7 +130,9 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     {});
   const [seenTasks, setSeenTasks] = useState<Record<string, string[]>>({});
   const [messages, setMessages] = useState<TeamMessage[]>(initialMessages);
-  const [projects, setProjects] = useState<Project[]>(seedProjects);
+  const [projects, setProjects] = useState<Project[]>(
+    supabaseConfigured ? [] : seedProjects
+  );
   /** La pornire, tot ce există deja e considerat văzut */
   const [seenSections, setSeenSections] = useState<
     Record<string, Record<NotifiedSection, string[]>>>(
@@ -178,8 +181,19 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     setCalendars
   });
 
+  const projectsSync = useProjectsSync({
+    enabled: supabaseConfigured,
+    projects,
+    setProjects
+  });
+
   /** O singură stare pentru toate cele trei legături cu baza de date */
-  const syncStatuses = [leadsSync.status, tasksSync.status, calendarsSync.status];
+  const syncStatuses = [
+  leadsSync.status,
+  tasksSync.status,
+  calendarsSync.status,
+  projectsSync.status];
+
   const combinedStatus: 'idle' | 'loading' | 'ready' | 'error' =
   syncStatuses.includes('error') ?
   'error' :
@@ -332,13 +346,18 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
         return [lead, ...current];
       }),
       dataStatus: combinedStatus,
-      dataError: leadsSync.error ?? tasksSync.error ?? calendarsSync.error
+      dataError:
+      leadsSync.error ??
+      tasksSync.error ??
+      calendarsSync.error ??
+      projectsSync.error
     }),
     [
     combinedStatus,
     leadsSync.error,
     tasksSync.error,
     calendarsSync.error,
+    projectsSync.error,
     activeUser,
     lists,
     leads,

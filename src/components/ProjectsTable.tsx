@@ -30,7 +30,11 @@ export function ProjectsTable() {
             Proiecte active
           </h2>
           <p className="text-sm text-ink-500">
-            {projects.length} proiecte, sortate după activitate recentă
+            {projects.length === 0 ?
+            'Niciun proiect deocamdată — adaugă primul cu butonul din dreapta' :
+            projects.length === 1 ?
+            'Un proiect, sortat după activitate recentă' :
+            `${projects.length} proiecte, sortate după activitate recentă`}
           </p>
         </div>
         <div className="flex items-center gap-2">

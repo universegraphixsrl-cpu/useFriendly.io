@@ -25,6 +25,8 @@ import {
 'lucide-react';
 import { crmModules, type CrmModule } from '../data/modules';
 import { subAccounts, subAccountsTotal } from '../data/subAccounts';
+import { useAuth } from '../contexts/AuthContext';
+import { supabaseConfigured } from '../lib/supabase';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { useUiActions } from '../contexts/UiActionsContext';
 
@@ -146,6 +148,11 @@ export function Sidebar({
 }: SidebarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [subAccountsOpen, setSubAccountsOpen] = useState(false);
+  const { teamMembers } = useAuth();
+  /** Câți oameni au cont, în afară de cel logat */
+  const teamCount = supabaseConfigured ?
+  Math.max(0, teamMembers.length - 1) :
+  subAccountsTotal;
   const { unseenTasksFor, unseenSectionFor, markSectionSeen, openTasksFor } =
   useWorkspace();
   const { runLabel } = useUiActions();
@@ -390,9 +397,11 @@ export function Sidebar({
             
             <UsersRoundIcon className="h-[18px] w-[18px]" aria-hidden="true" />
             <span className="flex-1 text-left">Sub-accounts</span>
+            {teamCount > 0 &&
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-ink-500">
-              {subAccountsTotal}
-            </span>
+                {teamCount}
+              </span>
+            }
             <ChevronRightIcon
               className={`h-4 w-4 text-ink-500 transition-transform duration-150 ease-out ${subAccountsOpen ? 'rotate-90' : ''}`}
               aria-hidden="true" />

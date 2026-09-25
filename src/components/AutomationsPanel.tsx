@@ -1,6 +1,7 @@
 import React from 'react';
 import { ZapIcon, PlusIcon, PlayIcon, PencilIcon } from 'lucide-react';
-import { automations } from '../data/crm';
+import { automations as demoAutomations } from '../data/crm';
+import { supabaseConfigured } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useUiActions } from '../contexts/UiActionsContext';
 import { viewPath } from '../appRoutes';
@@ -8,6 +9,14 @@ import { viewPath } from '../appRoutes';
 export function AutomationsPanel() {
   const navigate = useNavigate();
   const { runLabel, notify } = useUiActions();
+
+  /**
+   * Automatizările nu sunt încă salvate în baza de date, deci un cont
+   * real pornește fără niciuna. Exemplele rămân doar la lucrul local,
+   * pe date fictive.
+   */
+  const automations = supabaseConfigured ? [] : demoAutomations;
+
   return (
     <section
       aria-labelledby="automations-title"
@@ -37,6 +46,13 @@ export function AutomationsPanel() {
           Nouă
         </button>
       </div>
+
+      {automations.length === 0 &&
+      <p className="px-5 py-6 text-sm text-ink-500">
+          Nicio automatizare încă. Apasă pe „Nouă” ca să construiești prima:
+          alegi un declanșator și ce se întâmplă după el.
+        </p>
+      }
 
       <ul className="divide-y divide-slate-100">
         {automations.map((automation) =>
