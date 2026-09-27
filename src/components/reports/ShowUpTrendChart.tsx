@@ -8,9 +8,17 @@ import {
   CartesianGrid,
   Tooltip } from
 'recharts';
-import { showUpTrend } from '../../data/reports';
+import { showUpTrend as demoTrend } from '../../data/reports';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { supabaseConfigured } from '../../lib/supabase';
+import { showUpTrendFromLeads } from '../../lib/reportsFromLeads';
 
 export function ShowUpTrendChart() {
+  const { leads } = useWorkspace();
+  const showUpTrend = supabaseConfigured ?
+  showUpTrendFromLeads(leads) :
+  demoTrend;
+
   return (
     <section
       aria-labelledby="showup-title"
@@ -25,6 +33,12 @@ export function ShowUpTrendChart() {
       <p className="text-sm text-ink-500">
         Ultimele 8 săptămâni, media echipei
       </p>
+
+      {showUpTrend.length === 0 ?
+      <p className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-ink-500">
+          Graficul se desenează singur pe măsură ce intră leaduri și le muți
+          prin statusuri. Deocamdată nu e nimic de arătat.
+        </p> :
 
       <div className="mt-5 h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -75,6 +89,7 @@ export function ShowUpTrendChart() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      }
 
       <div className="mt-3 flex flex-wrap items-center gap-5 text-xs font-semibold text-ink-700">
         <span className="flex items-center gap-2">

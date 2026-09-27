@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { XIcon, MicIcon, VideoIcon, CheckIcon, PlusIcon } from 'lucide-react';
 import {
-  callerNames,
-  leadOwners,
   UNASSIGNED,
   type Lead,
   type LeadList,
   type LeadStatus } from
 '../../data/leads';
 import { LeadDocuments } from './LeadDocuments';
+import { useTeam, callerNamesIn, ownerNamesIn } from '../../lib/team';
 
 interface LeadDetailProps {
   lead: Lead;
@@ -44,10 +43,12 @@ export function LeadDetail({
   setDraft((current) => ({ ...current, ...changes }));
 
   const dirty = !readOnly && JSON.stringify(draft) !== JSON.stringify(lead);
+  const { groups } = useTeam();
+  const callerNames = callerNamesIn(groups);
   // Un sub-account își poate atribui leadul doar sieși
   const ownerOptions =
   viewer === null ?
-  leadOwners :
+  Array.from(new Set([...ownerNamesIn(groups), lead.owner])) :
   Array.from(new Set([UNASSIGNED, viewer, lead.owner]));
   const needsAmount = draft.status === 'Semnat' && draft.paidAmount <= 0;
 

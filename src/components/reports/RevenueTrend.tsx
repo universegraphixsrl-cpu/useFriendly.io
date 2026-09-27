@@ -12,6 +12,9 @@ import {
 'recharts';
 import { ChevronDownIcon, CheckIcon } from 'lucide-react';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { supabaseConfigured } from '../../lib/supabase';
+import { leadsByMonth } from '../../lib/reportsFromLeads';
+import type { Lead } from '../../data/leads';
 
 type MetricId =
 'collected' |
@@ -37,7 +40,38 @@ const metrics: Metric[] = [
 { id: 'commission', label: 'Comision', unit: 'eur' }];
 
 
-/** Lunile anterioare variază cu maximum ±30% față de august */
+/** Statusurile care înseamnă „apel programat”, respectiv „apel ținut” */
+const BOOKED = new Set([
+'Programat apel',
+'No-show',
+'A zis „Nu”',
+'Așteptăm răspuns',
+'A zis da',
+'Semnat']);
+
+
+const HELD = new Set(['A zis „Nu”', 'Așteptăm răspuns', 'A zis da', 'Semnat']);
+
+/** Valoarea unui indicator pentru un grup de leaduri */
+function valueOf(id: MetricId, group: Lead[]) {
+  const collected = group.reduce((sum, lead) => sum + (lead.paidAmount || 0), 0);
+  if (id === 'collected') return collected;
+  if (id === 'commission') return Math.round(collected * 0.1);
+  if (id === 'generated') {
+    return group.reduce((sum, lead) => sum + (lead.generatedAmount || 0), 0);
+  }
+  if (id === 'signed') {
+    return group.filter((lead) => lead.status === 'Semnat').length;
+  }
+  if (id === 'booked') return group.filter((lead) => BOOKED.has(lead.status)).length;
+  return group.filter((lead) => HELD.has(lead.status)).length;
+}
+
+/**
+ * Doar pentru lucrul local pe date fictive: lunile anterioare variază cu
+ * maximum ±30% față de ultima. Cu baza de date conectată nu se mai folosesc —
+ * acolo fiecare lună e calculată din leadurile ei.
+ */
 const monthFactors: {month: string;factor: number;}[] = [
 { month: 'Ian', factor: 0.74 },
 { month: 'Feb', factor: 0.83 },
@@ -75,34 +109,28 @@ export function RevenueTrend() {
   const scoped = activeUser ?
   leads.filter((lead) => lead.owner === activeUser) :
   leads;
-  const collected = scoped.reduce((sum, lead) => sum + lead.paidAmount, 0);
-  const generated = scoped.reduce((sum, lead) => sum + lead.generatedAmount, 0);
-  const signed = scoped.filter((lead) => lead.status === 'Semnat').length;
-  const held = scoped.filter(
-    (lead) => lead.listId === 'list-offers' || lead.listId === 'list-clients'
-  ).length;
-  const booked =
-  scoped.filter((lead) => lead.listId === 'list-calls').length + held;
-
-  const currentValues: Record<MetricId, number> = {
-    collected,
-    generated,
-    signed,
-    booked,
-    held,
-    commission: Math.round(collected * 0.1)
-  };
-
   const metric = metrics.find((item) => item.id === metricId) ?? metrics[0];
-  const current = currentValues[metric.id];
 
-  const data = monthFactors.map(({ month, factor }) => ({
+  /**
+   * Cu baza de date conectată, fiecare lună e calculată din leadurile ei.
+   * Fără chei (lucru local pe date fictive) rămâne vechea simulare.
+   */
+  const data = supabaseConfigured ?
+  leadsByMonth(scoped).map((bucket) => ({
+    month: bucket.month,
+    value: valueOf(metric.id, bucket.leads)
+  })) :
+  monthFactors.map(({ month, factor }) => ({
     month,
-    value: Math.round(current * factor)
+    value: Math.round(valueOf(metric.id, scoped) * factor)
   }));
 
   const latest = data[data.length - 1];
   const previous = data[data.length - 2];
+  /** Luna curentă: cea din dreapta graficului */
+  const current = latest.value;
+  const currentMonth = latest.month;
+  const previousMonth = previous.month;
   const delta = previous.value ?
   (latest.value - previous.value) / previous.value * 100 :
   0;
@@ -128,7 +156,7 @@ export function RevenueTrend() {
     const entry = payload[0].payload;
     const diff = entry.value - current;
     const percent = current ? diff / current * 100 : 0;
-    const isCurrent = entry.month === 'Aug';
+    const isCurrent = entry.month === currentMonth;
 
     return (
       <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg">
@@ -146,7 +174,8 @@ export function RevenueTrend() {
           
             {diff > 0 ? '+' : '−'}
             {format(Math.abs(diff))} ({diff > 0 ? '+' : '−'}
-            {Math.abs(percent).toFixed(1).replace('.', ',')}%) față de august
+            {Math.abs(percent).toFixed(1).replace('.', ',')}%) față de{' '}
+            {currentMonth}
           </p>
         }
       </div>);
@@ -177,7 +206,7 @@ export function RevenueTrend() {
             <p className="font-display text-2xl font-extrabold text-ink">
               {format(latest.value)}
             </p>
-            <p className="text-xs text-ink-500">August</p>
+            <p className="text-xs text-ink-500">{currentMonth}</p>
           </div>
           <div>
             <p
@@ -188,7 +217,7 @@ export function RevenueTrend() {
               {delta > 0 ? '+' : ''}
               {delta.toFixed(1).replace('.', ',')}%
             </p>
-            <p className="text-xs text-ink-500">Față de iulie</p>
+            <p className="text-xs text-ink-500">Față de {previousMonth}</p>
           </div>
 
           <div className="relative" ref={containerRef}>
@@ -262,7 +291,7 @@ export function RevenueTrend() {
               {data.map((entry) =>
               <Cell
                 key={entry.month}
-                fill={entry.month === 'Aug' ? '#2f6bff' : '#bdd1ff'} />
+                fill={entry.month === currentMonth ? '#2f6bff' : '#bdd1ff'} />
 
               )}
             </Bar>
@@ -280,7 +309,8 @@ export function RevenueTrend() {
           Luni anterioare
         </span>
         <span className="ml-auto text-ink-500">
-          Treci cu cursorul peste o lună pentru diferența față de august
+          Treci cu cursorul peste o lună pentru diferența față de{' '}
+          {currentMonth}
         </span>
       </div>
     </section>);

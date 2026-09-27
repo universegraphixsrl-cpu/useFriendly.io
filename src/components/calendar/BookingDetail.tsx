@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { XIcon } from 'lucide-react';
-import { leadOwners } from '../../data/leads';
+import { useTeam, ownerNamesIn } from '../../lib/team';
 
 export interface BookingContact {
   firstName: string;
@@ -29,6 +29,8 @@ export function BookingDetail({
   onClose
 }: BookingDetailProps) {
   const [draft, setDraft] = useState<BookingContact>(contact);
+  const { groups } = useTeam();
+  const owners = ownerNamesIn(groups);
 
   const patch = (changes: Partial<BookingContact>) =>
   setDraft((current) => ({ ...current, ...changes }));
@@ -73,7 +75,7 @@ export function BookingDetail({
             onChange={(event) => patch({ owner: event.target.value })}
             className={fieldClass}>
             
-            {[draft.owner, ...leadOwners.filter((n) => n !== draft.owner)].map(
+            {[draft.owner, ...owners.filter((n) => n !== draft.owner)].map(
               (name) =>
               <option key={name} value={name}>
                   {name}

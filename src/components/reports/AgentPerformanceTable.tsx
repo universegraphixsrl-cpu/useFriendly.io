@@ -1,8 +1,20 @@
 import React from 'react';
 import { TrendingUpIcon, TrendingDownIcon, DownloadIcon } from 'lucide-react';
-import { agentPerformance } from '../../data/reports';
+import { agentPerformance as demoPerformance } from '../../data/reports';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { useTeam } from '../../lib/team';
+import { supabaseConfigured } from '../../lib/supabase';
+import { agentPerformanceFromLeads } from '../../lib/reportsFromLeads';
 
 export function AgentPerformanceTable() {
+  const { leads } = useWorkspace();
+  const { groups } = useTeam();
+
+  /** Din leadurile reale; fără bază de date rămâne exemplul din design */
+  const agentPerformance = supabaseConfigured ?
+  agentPerformanceFromLeads(leads, groups) :
+  demoPerformance;
+
   return (
     <section
       aria-labelledby="agents-title"
@@ -17,7 +29,7 @@ export function AgentPerformanceTable() {
             Performanța agenților
           </h2>
           <p className="text-sm text-ink-500">
-            Show-up rate, rată de închidere și încasări · august
+            Show-up rate, rată de închidere și încasări
           </p>
         </div>
         <button

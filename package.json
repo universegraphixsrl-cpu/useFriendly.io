@@ -7,7 +7,11 @@
     "dev": "npx vite",
     "build": "npx vite build",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "preview": "npx vite preview"
+    "preview": "npx vite preview",
+    "smoke": "npx esbuild scripts/smoke.tsx --bundle --platform=node --format=cjs --jsx=automatic --define:import.meta.env='{\"VITE_SUPABASE_URL\":\"https://smoke.supabase.co\",\"VITE_SUPABASE_ANON_KEY\":\"smoke-key\",\"DEV\":false,\"PROD\":true}' --outfile=node_modules/.cache/smoke-real.cjs && node node_modules/.cache/smoke-real.cjs",
+    "smoke:demo": "npx esbuild scripts/smoke.tsx --bundle --platform=node --format=cjs --jsx=automatic --define:import.meta.env='{\"DEV\":true,\"PROD\":false}' --outfile=node_modules/.cache/smoke-demo.cjs && node node_modules/.cache/smoke-demo.cjs",
+    "checks": "npx esbuild scripts/checks.ts --bundle --platform=node --format=cjs --jsx=automatic --define:import.meta.env='{\"DEV\":true,\"PROD\":false}' --outfile=node_modules/.cache/checks.cjs && node node_modules/.cache/checks.cjs",
+    "verify": "npm run build && npm run checks && npm run smoke && npm run smoke:demo"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",

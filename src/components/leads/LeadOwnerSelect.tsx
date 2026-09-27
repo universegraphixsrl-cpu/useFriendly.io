@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDownIcon, CheckIcon, LockIcon } from 'lucide-react';
 import {
-  leadOwners,
   statusVisuals,
   UNASSIGNED,
   type CustomLeadStatus } from
 '../../data/leads';
+import { useTeam, ownerNamesIn } from '../../lib/team';
 
 interface LeadOwnerSelectProps {
   owner: string;
@@ -28,8 +28,9 @@ export function LeadOwnerSelect({
   viewer,
   onChange
 }: LeadOwnerSelectProps) {
+  const { groups } = useTeam();
   const options =
-  viewer === null ? leadOwners : [UNASSIGNED, viewer];
+  viewer === null ? ownerNamesIn(groups) : [UNASSIGNED, viewer];
   const [open, setOpen] = useState(false);
   const visuals = statusVisuals(status, customStatuses);
   const containerRef = useRef<HTMLDivElement>(null);

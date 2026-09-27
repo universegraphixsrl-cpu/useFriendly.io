@@ -188,7 +188,7 @@ export function PipelineSummary() {
             <div className="text-right">
               <p className="font-display text-2xl font-extrabold">
                 {formatPercent(
-                  selected.vanzariNoi / selected.prezentiApel * 100
+                  safePercent(selected.vanzariNoi, selected.prezentiApel)
                 )}
               </p>
               <p className="text-xs text-slate-400">Closing rate la apel</p>
@@ -196,7 +196,7 @@ export function PipelineSummary() {
             <div className="text-right">
               <p className="font-display text-2xl font-extrabold">
                 {formatPercent(
-                  selected.prezentiApel / selected.apeluriProgramate * 100
+                  safePercent(selected.prezentiApel, selected.apeluriProgramate)
                 )}
               </p>
               <p className="text-xs text-slate-400">Show-up rate</p>
@@ -215,7 +215,10 @@ export function PipelineSummary() {
               <span
               className="block h-full rounded-full bg-brand-400 transition-[width] duration-200 ease-out"
               style={{
-                width: `${Math.max(stage.count / selected.inscrisiWebinar * 100, 4)}%`
+                width: `${Math.max(
+                  safePercent(stage.count, selected.inscrisiWebinar),
+                  4
+                )}%`
               }} />
             
             </span>

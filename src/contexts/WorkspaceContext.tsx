@@ -344,7 +344,13 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
           vocarooLink: '',
           zoomLink: '',
           status: 'Înscris webinar',
-          addedOn: new Date().toISOString(),
+          // Aceeași scriere ca în formularul de lead, ca rapoartele să
+          // înțeleagă data („27 sept. 2026”)
+          addedOn: new Date().toLocaleDateString('ro-RO', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          }),
           paidAmount: 0,
           generatedAmount: 0,
           payments: [],

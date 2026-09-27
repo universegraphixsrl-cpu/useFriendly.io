@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { XIcon, MicIcon, VideoIcon, SparklesIcon } from 'lucide-react';
 import {
-  callerNames,
-  leadOwners,
   UNASSIGNED,
   type Lead,
   type LeadList,
   type LeadStatus } from
 '../../data/leads';
+import { useTeam, callerNamesIn, ownerNamesIn } from '../../lib/team';
 
 interface LeadFormProps {
   lists: LeadList[];
@@ -31,7 +30,10 @@ export function LeadForm({
   viewer = null
 }: LeadFormProps) {
   // Un sub-account poate atribui leadul doar sieși
-  const ownerOptions = viewer === null ? leadOwners : [UNASSIGNED, viewer];
+  const { groups } = useTeam();
+  const callerNames = callerNamesIn(groups);
+  const ownerOptions =
+  viewer === null ? ownerNamesIn(groups) : [UNASSIGNED, viewer];
   const [owner, setOwner] = useState(ownerOptions[0]);
   const [caller, setCaller] = useState('');
   const [firstName, setFirstName] = useState('');

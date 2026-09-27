@@ -19,7 +19,8 @@ import {
   type ReportRange } from
 '../components/reports/RangePicker';
 import { useWorkspace } from '../contexts/WorkspaceContext';
-import { callerNames, leadDateIso } from '../data/leads';
+import { leadDateIso } from '../data/leads';
+import { useTeam, callerNamesIn } from '../lib/team';
 import { exportReportPdf } from '../utils/exportReportPdf';
 import { AgentFilter } from '../components/reports/AgentFilter';
 import { CallerPerformanceTable } from '../components/reports/CallerPerformanceTable';
@@ -36,6 +37,8 @@ const callerMetricIds = [
 
 export function Reports() {
   const { leads, activeUser } = useWorkspace();
+  const { groups } = useTeam();
+  const callerNames = callerNamesIn(groups);
   const [range, setRange] = useState<ReportRange>(defaultReportRange);
   // Cei 6 indicatori principali sunt pre-selectați, dar pot fi scoși.
   // Un caller pornește și cu indicatorii lui specifici.

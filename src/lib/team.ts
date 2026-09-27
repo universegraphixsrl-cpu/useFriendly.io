@@ -6,6 +6,11 @@ import {
   subAccountsTotal as demoTotal,
   type SubAccountRole } from
 '../data/subAccounts';
+import {
+  callerNames as demoCallerNames,
+  leadOwners as demoLeadOwners,
+  UNASSIGNED } from
+'../data/leads';
 
 /**
  * Echipa reală: oamenii care chiar au cont în acest CRM.
@@ -87,6 +92,25 @@ export function roleOfIn(groups: SubAccountRole[], name: string) {
     Managers: 'Manager',
     Marketers: 'Marketer'
   }[group.role];
+}
+
+/**
+ * Numele callerilor reali — pentru rapoartele și selectoarele lor.
+ * Fără bază de date rămâne lista de exemplu, ca să poți lucra local.
+ */
+export function callerNamesIn(groups: SubAccountRole[]) {
+  if (!supabaseConfigured) return demoCallerNames;
+  return groups.find((item) => item.role === 'Callers')?.members ?? [];
+}
+
+/**
+ * Cine poate fi responsabil de un lead: toți oamenii cu cont, plus
+ * „Neatribuit”. Înainte era o listă scrisă în cod — de aceea apăreau
+ * nume inventate în selectoare.
+ */
+export function ownerNamesIn(groups: SubAccountRole[]) {
+  if (!supabaseConfigured) return demoLeadOwners;
+  return [UNASSIGNED, ...groups.flatMap((group) => group.members)];
 }
 
 /** Culoarea rolului, pentru buline și accente */

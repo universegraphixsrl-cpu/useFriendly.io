@@ -121,9 +121,35 @@ const monthAbbr: Record<string, number> = {
   dec: 12
 };
 
-/** Transformă „18 aug 2026” sau „18 aug. 2026” în „2026-08-18” */
+/**
+ * Transformă data unui lead în „2026-08-18”, indiferent cum a fost scrisă:
+ * „18 aug 2026”, „18 aug. 2026”, „18.08.2026” sau direct în format ISO
+ * (inclusiv cu oră, cum vine din baza de date).
+ *
+ * De ce contează: rapoartele filtrează leadurile pe perioada aleasă în
+ * calendar. Dacă data nu e înțeleasă, leadul dispare din toate rapoartele.
+ */
 export function leadDateIso(addedOn: string) {
-  const parts = addedOn.replace(/\./g, '').trim().split(/\s+/);
+  const text = (addedOn ?? '').trim();
+  if (!text) return '';
+
+  // Deja ISO: „2026-08-18” sau „2026-08-18T09:30:00Z”
+  const isoForm = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+  if (isoForm) return isoForm[1] + '-' + isoForm[2] + '-' + isoForm[3];
+
+  // „18.08.2026”, „18/08/2026”
+  const dotted = /^(\d{1,2})[./](\d{1,2})[./](\d{4})$/.exec(text);
+  if (dotted) {
+    return (
+      dotted[3] +
+      '-' +
+      dotted[2].padStart(2, '0') +
+      '-' +
+      dotted[1].padStart(2, '0'));
+
+  }
+
+  const parts = text.replace(/\./g, '').trim().split(/\s+/);
   if (parts.length < 3) return '';
   const day = Number(parts[0]);
   const month =

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDownIcon, CheckIcon } from 'lucide-react';
-import { callerNames, statusVisuals, type CustomLeadStatus } from '../../data/leads';
+import { statusVisuals, type CustomLeadStatus } from '../../data/leads';
+import { useTeam, callerNamesIn } from '../../lib/team';
 
 interface LeadCallerSelectProps {
   caller: string;
@@ -25,6 +26,8 @@ export function LeadCallerSelect({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const visuals = statusVisuals(status, customStatuses);
+  const { groups } = useTeam();
+  const callerNames = callerNamesIn(groups);
 
   // Un caller se poate aloca doar pe sine; ceilalți agenți nu pot schimba nimic
   const options =

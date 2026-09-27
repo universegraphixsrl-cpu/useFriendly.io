@@ -1,6 +1,7 @@
 import React from 'react';
-import { callerNames, type Lead } from '../../data/leads';
+import { type Lead } from '../../data/leads';
 import { formatEur, formatPercent } from '../../data/kpis';
+import { useTeam, callerNamesIn } from '../../lib/team';
 
 interface CallerPerformanceTableProps {
   /** Leadurile din perioada selectată, la nivel de echipă */
@@ -16,7 +17,8 @@ export function CallerPerformanceTable({
   activeCaller,
   period
 }: CallerPerformanceTableProps) {
-  const rows = callerNames.
+  const { groups } = useTeam();
+  const rows = callerNamesIn(groups).
   filter((name) => !activeCaller || name === activeCaller).
   map((name) => {
     const own = leads.filter((lead) => lead.caller === name);
