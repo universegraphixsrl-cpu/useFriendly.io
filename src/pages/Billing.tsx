@@ -10,6 +10,7 @@ import {
   ArrowUpRightIcon } from
 'lucide-react';
 import { invoices, planUsage, type Invoice } from '../data/billing';
+import { NotConnectedNotice } from '../components/NotConnectedNotice';
 
 const statusStyles: Record<Invoice['status'], string> = {
   Plătită: 'bg-emerald-50 text-emerald-700',
@@ -52,6 +53,12 @@ export function Billing() {
           Descarcă toate facturile
         </button>
       </div>
+
+      <NotConnectedNotice title="Atenție: cifrele de pe acest ecran sunt inventate">
+        Facturile, consumul și metoda de plată de mai jos sunt un exemplu de
+        design, nu datele reale ale contului tău. Nu lua nicio decizie după ele
+        și nu le raporta ca bug — ecranul devine real când conectăm plățile.
+      </NotConnectedNotice>
 
       <section
         aria-labelledby="plan-title"

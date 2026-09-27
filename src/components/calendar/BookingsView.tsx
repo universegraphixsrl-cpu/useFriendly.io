@@ -9,11 +9,11 @@ import {
   CheckIcon } from
 'lucide-react';
 import {
-  bookings as allBookings,
   formatBookingDate,
   isUpcoming,
   type Booking } from
 '../../data/bookings';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 import type { BookingCalendar } from '../../data/calendars';
 import {
   DateFilter,
@@ -57,6 +57,7 @@ export function BookingsView({
   calendarId,
   onBack
 }: BookingsViewProps) {
+  const { bookings: allBookings } = useWorkspace();
   const [dateFilter, setDateFilter] = useState<LeadDateFilter>({ kind: 'all' });
   const [timeline, setTimeline] = useState<Timeline>('all');
   const [owner, setOwner] = useState<string | null>(null);

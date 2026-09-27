@@ -2,6 +2,8 @@ export interface LessonResource {
   id: string;
   name: string;
   kind: 'link' | 'file';
+  /** Adresa resursei: linkul introdus, sau calea fișierului încărcat */
+  url?: string;
 }
 
 export interface Lesson {

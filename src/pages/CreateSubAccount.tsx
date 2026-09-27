@@ -10,23 +10,48 @@ interface Category {
   color: string;
   description: string;
   members: number;
+  /** Ce drepturi primește de fapt cineva din categoria asta */
+  permission: Role;
 }
 
 const NAME_LIMIT = 30;
 const SEAT_LIMIT = 50;
 
+/** „Closers” în interfață înseamnă rolul `closer` în baza de date */
+const ROLE_OF_GROUP: Record<string, Role> = {
+  Closers: 'closer',
+  Callers: 'caller',
+  Managers: 'manager',
+  Marketers: 'marketer'
+};
+
+const DESCRIPTION_OF: Record<string, string> = {
+  Closers: 'Închid apelurile de vânzare și gestionează ofertele.',
+  Callers: 'Califică leadurile și programează apelurile.',
+  Managers: 'Coordonează echipa și urmăresc targeturile.',
+  Marketers: 'Rulează campaniile și conținutul de achiziție.'
+};
+
+const COLOR_OF: Record<string, string> = {
+  Closers: '#2f6bff',
+  Callers: '#f97316',
+  Managers: '#10b981',
+  Marketers: '#eab308'
+};
+
+/**
+ * Cele patru categorii de bază există întotdeauna, chiar dacă încă nu
+ * e nimeni în ele. Altfel, pe un cont nou, n-ai în ce categorie să
+ * inviți primul om — și n-ai cum să începi.
+ */
+const BASE_ROLES = ['Closers', 'Callers', 'Managers', 'Marketers'];
+
 const initialCategories: Category[] = demoSubAccounts.map((group) => ({
   role: group.role,
   color: group.color,
-  description:
-  group.role === 'Closers' ?
-  'Închid apelurile de vânzare și gestionează ofertele.' :
-  group.role === 'Callers' ?
-  'Califică leadurile și programează apelurile.' :
-  group.role === 'Managers' ?
-  'Coordonează echipa și urmăresc targeturile.' :
-  'Rulează campaniile și conținutul de achiziție.',
-  members: group.members.length
+  description: DESCRIPTION_OF[group.role] ?? '',
+  members: group.members.length,
+  permission: ROLE_OF_GROUP[group.role] ?? 'caller'
 }));
 
 interface Member {
@@ -53,35 +78,42 @@ group.members.map((member) => ({
 }))
 );
 
-/** „Closers” în interfață înseamnă rolul `closer` în baza de date */
-const ROLE_OF_GROUP: Record<string, Role> = {
-  Closers: 'closer',
-  Callers: 'caller',
-  Managers: 'manager',
-  Marketers: 'marketer'
-};
-
 export function CreateSubAccount() {
   const { groups, profiles } = useTeam();
 
-  /** Categoriile existente vin din rolurile oamenilor care au cont */
-  const liveCategories: Category[] = groups.map((group) => ({
-    role: group.role,
-    color: group.color,
-    description:
-    group.role === 'Closers' ?
-    'Închid apelurile de vânzare și gestionează ofertele.' :
-    group.role === 'Callers' ?
-    'Califică leadurile și programează apelurile.' :
-    group.role === 'Managers' ?
-    'Coordonează echipa și urmăresc targeturile.' :
-    'Rulează campaniile și conținutul de achiziție.',
-    members: group.members.length
-  }));
-
-  const [categories, setCategories] = useState<Category[]>(
-    supabaseConfigured ? liveCategories : initialCategories
+  /**
+   * Categoriile de bază, cu numărul real de oameni din fiecare.
+   *
+   * Se calculează la fiecare randare, nu o singură dată la pornire:
+   * echipa se încarcă din baza de date după ce pagina e deja pe ecran,
+   * iar o valoare citită o dată ar rămâne veșnic goală. (Exact asta a
+   * fost: pagina nu arăta nicio categorie și nu puteai invita pe nimeni.)
+   */
+  const liveCategories: Category[] = useMemo(
+    () =>
+    BASE_ROLES.map((role) => ({
+      role,
+      color: COLOR_OF[role] ?? '#94a3b8',
+      description: DESCRIPTION_OF[role] ?? '',
+      members:
+      groups.find((group) => group.role === role)?.members.length ?? 0,
+      permission: ROLE_OF_GROUP[role] ?? 'caller'
+    })),
+    [groups]
   );
+
+  /** Categoriile adăugate de mână, peste cele de bază */
+  const [extraCategories, setExtraCategories] = useState<Category[]>([]);
+  const categories = useMemo(() => {
+    const base = supabaseConfigured ? liveCategories : initialCategories;
+    return [
+    ...base,
+    ...extraCategories.filter(
+      (item) => !base.some((existing) => existing.role === item.role)
+    )];
+
+  }, [liveCategories, extraCategories]);
+
   const [selected, setSelected] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
@@ -90,6 +122,7 @@ export function CreateSubAccount() {
   const [members, setMembers] = useState<Member[]>(
     supabaseConfigured ? [] : demoMembers
   );
+  const [permission, setPermission] = useState<Role>('caller');
   const [sending, setSending] = useState(false);
   const [inviteError, setInviteError] = useState('');
   const [inviteOk, setInviteOk] = useState('');
@@ -121,6 +154,19 @@ export function CreateSubAccount() {
   const colorOf = (role: string) =>
   categories.find((category) => category.role === role)?.color ?? '#94a3b8';
 
+  /** Ce drepturi primește efectiv cineva invitat în categoria aleasă */
+  const permissionOfSelected: Role =
+  categories.find((category) => category.role === selected)?.permission ??
+  'caller';
+
+  const PERMISSION_LABEL: Record<Role, string> = {
+    admin: 'Administrator — vede și modifică tot',
+    manager: 'Manager — vede toate leadurile echipei',
+    closer: 'Closer — vede doar leadurile lui',
+    caller: 'Caller — vede doar leadurile lui',
+    marketer: 'Marketer — vede doar leadurile lui'
+  };
+
   const sendInvite = async () => {
     const trimmedName = memberName.trim();
     const trimmedEmail = memberEmail.trim();
@@ -138,7 +184,7 @@ export function CreateSubAccount() {
       const message = await inviteMember({
         email: trimmedEmail,
         fullName: trimmedName,
-        role: ROLE_OF_GROUP[selected] ?? 'caller'
+        role: permissionOfSelected
       });
       setSending(false);
       if (message) {
@@ -165,14 +211,15 @@ export function CreateSubAccount() {
   const createCategory = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    setCategories((current) => [
+    setExtraCategories((current) => [
     ...current,
-    { role: trimmed, color, description, members: 0 }]
+    { role: trimmed, color, description, members: 0, permission }]
     );
     setSelected(trimmed);
     setName('');
     setDescription('');
     setColor(categoryColors[0]);
+    setPermission('caller');
     setFormOpen(false);
   };
 
@@ -346,6 +393,32 @@ export function CreateSubAccount() {
             </div>
           </div>
 
+          <div className="mt-4">
+            <label
+            htmlFor="categoryPermission"
+            className="text-xs font-bold uppercase tracking-wide text-ink-500">
+            
+              Ce drepturi are categoria asta *
+            </label>
+            <select
+            id="categoryPermission"
+            value={permission}
+            onChange={(event) => setPermission(event.target.value as Role)}
+            className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-ink focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100 lg:w-1/2">
+            
+              <option value="caller">Caller — vede doar leadurile lui</option>
+              <option value="closer">Closer — vede doar leadurile lui</option>
+              <option value="marketer">Marketer — vede doar leadurile lui</option>
+              <option value="manager">Manager — vede toate leadurile echipei</option>
+              <option value="admin">Administrator — vede și modifică tot</option>
+            </select>
+            <p className="mt-1.5 text-xs leading-relaxed text-ink-500">
+              Numele categoriei e doar o etichetă pentru tine. Drepturile reale
+              — ce leaduri vede omul și ce poate modifica — vin din ce alegi
+              aici.
+            </p>
+          </div>
+
           <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-ink-500">
             Culoare
           </p>
@@ -408,6 +481,9 @@ export function CreateSubAccount() {
           </h2>
           <p className="text-xs text-ink-500">
             Primește invitație pe email și își setează singur parola.
+          </p>
+          <p className="mt-2 inline-flex rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-ink-700">
+            Drepturi: {PERMISSION_LABEL[permissionOfSelected]}
           </p>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -485,10 +561,10 @@ export function CreateSubAccount() {
               Sub-accounts existente
             </h2>
             <p className="text-xs text-ink-500">
-              {members.filter((member) => member.status === 'Activ').length}{' '}
-              active ·{' '}
-              {members.filter((member) => member.status === 'Pending').length} în
-              așteptare
+              {shownMembers.filter((member) => member.status === 'Activ').length}
+              {' '}active ·{' '}
+              {shownMembers.filter((member) => member.status === 'Pending').length}
+              {' '}în așteptare
             </p>
           </div>
         </div>

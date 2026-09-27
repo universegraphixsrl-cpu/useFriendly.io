@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   PlusIcon,
   ExternalLinkIcon,
@@ -22,6 +22,7 @@ import { FunnelsList } from '../components/web/FunnelsList';
 import { FunnelDetail } from '../components/web/FunnelDetail';
 import { funnels, type Funnel, type FunnelStep } from '../data/funnels';
 import { Toast } from '../components/Toast';
+import { useCollectionSync, startWith } from '../lib/collectionSync';
 
 const blankPage = (): WebPage => ({
   id: `page-${Date.now()}`,
@@ -39,7 +40,7 @@ const blankPage = (): WebPage => ({
 });
 
 export function WebBuilder() {
-  const [pages, setPages] = useState<WebPage[]>(webPages);
+  const [pages, setPages] = useState<WebPage[]>(startWith(webPages));
   const [editing, setEditing] = useState<WebPage | null>(null);
   const [toast, setToast] = useState(false);
   const [tab, setTab] = useState<
@@ -48,9 +49,23 @@ export function WebBuilder() {
   const [formsTab, setFormsTab] = useState<
     'lista' | 'submissions' | 'statistici'>(
     'lista');
-  const [funnelList, setFunnelList] = useState<Funnel[]>(funnels);
+  const [funnelList, setFunnelList] = useState<Funnel[]>(startWith(funnels));
   // la refresh pornim în primul funnel, fără overlay-ul de editor peste CRM
-  const [openFunnel, setOpenFunnel] = useState<Funnel | null>(funnels[0] ?? null);
+  const [openFunnel, setOpenFunnel] = useState<Funnel | null>(
+    startWith(funnels)[0] ?? null
+  );
+
+  // Paginile și funnel-urile se încarcă din baza de date și se salvează
+  // singure la fiecare modificare.
+  useCollectionSync('web_page', pages, setPages);
+  useCollectionSync('funnel', funnelList, setFunnelList);
+
+  // După ce lista vine din baza de date, deschidem primul funnel —
+  // altfel ecranul ar rămâne gol deși există funnel-uri salvate.
+  useEffect(() => {
+    if (openFunnel || funnelList.length === 0) return;
+    setOpenFunnel(funnelList[0]);
+  }, [funnelList, openFunnel]);
 
   const confirm = () => {
     setToast(true);

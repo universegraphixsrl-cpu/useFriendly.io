@@ -14,6 +14,8 @@ import {
 '../data/marketing';
 import { FlowBuilder } from '../components/marketing/FlowBuilder';
 import { Toast } from '../components/Toast';
+import { useCollectionSync, startWith } from '../lib/collectionSync';
+import { NotConnectedNotice } from '../components/NotConnectedNotice';
 
 const blankFlow = (): MarketingFlow => ({
   id: `flow-${Date.now()}`,
@@ -35,7 +37,10 @@ const blankFlow = (): MarketingFlow => ({
 });
 
 export function Marketing() {
-  const [flows, setFlows] = useState<MarketingFlow[]>(marketingFlows);
+  const [flows, setFlows] = useState<MarketingFlow[]>(startWith(marketingFlows));
+
+  // Fluxurile se salvează în baza de date la fiecare modificare
+  useCollectionSync('marketing_flow', flows, setFlows);
   const [editing, setEditing] = useState<MarketingFlow | null>(null);
   const [toast, setToast] = useState(false);
 
@@ -80,6 +85,14 @@ export function Marketing() {
           Creează un flux
         </button>
       </div>
+
+      <NotConnectedNotice>
+        Fluxurile pe care le construiești aici se salvează și le regăsești la
+        refresh — pași, texte, ore de trimitere, tot. Ce nu se întâmplă încă:
+        mesajele <strong>nu pleacă efectiv</strong> pe email sau SMS. Pentru
+        asta e nevoie de un cont la un serviciu de trimitere, care costă lunar.
+        Cifrele de „trimise" și „rată de deschidere" vor fi reale abia atunci.
+      </NotConnectedNotice>
 
       {editing &&
       <FlowBuilder

@@ -10,6 +10,7 @@ import {
   type LeadDocument,
   type LeadDocumentType } from
 '../../data/leads';
+import { uploadFile, fileUrl, removeFile } from '../../lib/storage';
 
 interface LeadDocumentsProps {
   documents: LeadDocument[];
@@ -32,18 +33,39 @@ export function LeadDocuments({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pendingType, setPendingType] = useState<LeadDocumentType>('Factură');
   const [dragging, setDragging] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
-  const attach = (files: FileList | null, type: LeadDocumentType) => {
-    if (!files) return;
-    Array.from(files).forEach((file) => {
+  /** Urcă fișierele și abia apoi le adaugă în fișa leadului */
+  const attach = async (files: FileList | null, type: LeadDocumentType) => {
+    if (!files || files.length === 0) return;
+    setUploadError('');
+    setBusy(true);
+    for (const file of Array.from(files)) {
+      const { url, error } = await uploadFile(file, 'leads');
+      if (error || !url) {
+        setUploadError(error ?? 'Încărcarea a eșuat.');
+        continue;
+      }
       onAdd({
-        id: `doc-${Date.now()}-${file.name}`,
+        id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         fileName: file.name,
         type,
         addedOn: today(),
-        url: URL.createObjectURL(file)
+        url
       });
-    });
+    }
+    setBusy(false);
+  };
+
+  /** Deschide fișierul cu o adresă semnată, valabilă o oră */
+  const openDocument = async (document: LeadDocument) => {
+    const address = await fileUrl(document.url ?? '');
+    if (!address) {
+      setUploadError('Fișierul nu mai poate fi descărcat.');
+      return;
+    }
+    window.open(address, '_blank', 'noopener');
   };
 
   return (
@@ -71,17 +93,20 @@ export function LeadDocuments({
                   {document.type} · {document.addedOn}
                 </span>
               </span>
-              <a
-            href={document.url ?? '#'}
-            download={document.fileName}
+              <button
+            type="button"
+            onClick={() => void openDocument(document)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-ink-700 transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
             
                 <DownloadIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                PDF
-              </a>
+                Deschide
+              </button>
               <button
             type="button"
-            onClick={() => onRemove(document.id)}
+            onClick={() => {
+              void removeFile(document.url ?? '');
+              onRemove(document.id);
+            }}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors duration-150 ease-out hover:bg-red-50 hover:text-red-600"
             aria-label={`Șterge ${document.fileName}`}>
             
@@ -92,6 +117,17 @@ export function LeadDocuments({
         </ul> :
 
       <p className="mt-2 text-sm text-ink-500">Niciun document atașat</p>
+      }
+
+      {busy &&
+      <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700">
+          Se încarcă fișierul…
+        </p>
+      }
+      {uploadError &&
+      <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+          {uploadError}
+        </p>
       }
 
       <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-ink-500">
@@ -122,7 +158,7 @@ export function LeadDocuments({
         onDrop={(event) => {
           event.preventDefault();
           setDragging(false);
-          attach(event.dataTransfer.files, pendingType);
+          void attach(event.dataTransfer.files, pendingType);
         }}
         className={`mt-3 flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed px-4 py-5 text-center transition-colors duration-150 ease-out ${
         dragging ?
@@ -149,7 +185,7 @@ export function LeadDocuments({
         multiple
         className="hidden"
         onChange={(event) => {
-          attach(event.target.files, pendingType);
+          void attach(event.target.files, pendingType);
           event.target.value = '';
         }} />
       

@@ -21,6 +21,13 @@ import { Dashboard } from '../src/pages/Dashboard';
 import { Tasks } from '../src/pages/Tasks';
 import { Calendar } from '../src/pages/Calendar';
 import { CreateSubAccount } from '../src/pages/CreateSubAccount';
+import { WebBuilder } from '../src/pages/WebBuilder';
+import { Marketing } from '../src/pages/Marketing';
+import { PaymentLinks } from '../src/pages/PaymentLinks';
+import { Materials } from '../src/pages/Materials';
+import { Automations } from '../src/pages/Automations';
+import { Billing } from '../src/pages/Billing';
+import { Account } from '../src/pages/Account';
 
 const pages: [string, React.ComponentType][] = [
   ['Reports', Reports],
@@ -28,7 +35,14 @@ const pages: [string, React.ComponentType][] = [
   ['Dashboard', Dashboard],
   ['Tasks', Tasks],
   ['Calendar', Calendar],
-  ['CreateSubAccount', CreateSubAccount]
+  ['CreateSubAccount', CreateSubAccount],
+  ['WebBuilder', WebBuilder],
+  ['Marketing', Marketing],
+  ['PaymentLinks', PaymentLinks],
+  ['Materials', Materials],
+  ['Automations', Automations],
+  ['Billing', Billing],
+  ['Account', () => <Account theme="light" onThemeChange={() => {}} />]
 ];
 
 // Avertismentele de useLayoutEffect sunt normale la randarea pe server

@@ -8,6 +8,7 @@ import {
   PlusIcon } from
 'lucide-react';
 import type { Lesson, LessonResource } from '../../data/courses';
+import { uploadFile, fileUrl, removeFile } from '../../lib/storage';
 
 interface LessonEditorProps {
   lesson: Lesson;
@@ -20,24 +21,61 @@ export function LessonEditor({
   onChange,
   onDelete
 }: LessonEditorProps) {
-  const [dragging, setDragging] = useState(false);
   const [draggingFile, setDraggingFile] = useState(false);
   const [linkName, setLinkName] = useState('');
-  const videoInput = useRef<HTMLInputElement>(null);
+  const [videoLink, setVideoLink] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [fileError, setFileError] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const addResource = (name: string, kind: LessonResource['kind']) =>
+  const addResource = (
+  name: string,
+  kind: LessonResource['kind'],
+  url?: string) =>
   onChange({
     resources: [
     ...lesson.resources,
-    { id: `res-${Date.now()}`, name, kind }]
+    {
+      id: `res-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      kind,
+      url
+    }]
 
   });
 
-  const removeResource = (id: string) =>
-  onChange({
-    resources: lesson.resources.filter((item) => item.id !== id)
-  });
+  /** Urcă fișierele alese și abia apoi le trece în lista de resurse */
+  const attachFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    setFileError('');
+    setUploading(true);
+    for (const file of files) {
+      const { url, error } = await uploadFile(file, 'courses');
+      if (error || !url) {
+        setFileError(error ?? 'Încărcarea a eșuat.');
+        continue;
+      }
+      addResource(file.name, 'file', url);
+    }
+    setUploading(false);
+  };
+
+  const openResource = async (resource: LessonResource) => {
+    const address = await fileUrl(resource.url ?? '');
+    if (!address) {
+      setFileError('Fișierul nu mai poate fi deschis.');
+      return;
+    }
+    window.open(address, '_blank', 'noopener');
+  };
+
+  const removeResource = (id: string) => {
+    const resource = lesson.resources.find((item) => item.id === id);
+    if (resource?.kind === 'file' && resource.url) void removeFile(resource.url);
+    onChange({
+      resources: lesson.resources.filter((item) => item.id !== id)
+    });
+  };
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -71,11 +109,16 @@ export function LessonEditor({
                 <PlayIcon className="h-4 w-4" aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-ink">
+                <a
+                href={lesson.video}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block truncate text-sm font-semibold text-brand-600 hover:underline">
+                
                   {lesson.video}
-                </span>
+                </a>
                 <span className="block text-[11px] font-semibold text-ink-500">
-                  Încărcat · {lesson.duration}
+                  Video extern · {lesson.duration}
                 </span>
               </span>
               <button
@@ -83,53 +126,44 @@ export function LessonEditor({
               onClick={() => onChange({ video: null, duration: '—' })}
               className="text-xs font-bold text-rose-600 hover:text-rose-700">
               
-                Șterge
+                Scoate
               </button>
             </div> :
 
-          <div
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragging(false);
-              const file = event.dataTransfer.files[0];
-              if (file) onChange({ video: file.name, duration: '00:00' });
-            }}
-            className={`mt-1.5 rounded-xl border-2 border-dashed p-4 text-center transition-colors duration-150 ease-out ${
-            dragging ?
-            'border-brand-400 bg-brand-50' :
-            'border-slate-200 bg-slate-50'}`
-            }>
-            
-              <UploadCloudIcon
-              className="mx-auto h-5 w-5 text-ink-500"
-              aria-hidden="true" />
-            
-              <p className="mt-1.5 text-xs font-semibold text-ink-700">
-                Trage fișierul video aici
-              </p>
-              <button
-              type="button"
-              onClick={() => videoInput.current?.click()}
-              className="mt-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-ink-700 transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
+          <div className="mt-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <label
+              htmlFor={`video-${lesson.id}`}
+              className="text-xs font-semibold text-ink-700">
               
-                Alege din calculator
-              </button>
-              <input
-              ref={videoInput}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) onChange({ video: file.name, duration: '00:00' });
-                event.target.value = '';
-              }} />
-            
+                Linkul video (YouTube nelistat, Vimeo, Loom)
+              </label>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                <input
+                id={`video-${lesson.id}`}
+                type="url"
+                value={videoLink}
+                onChange={(event) => setVideoLink(event.target.value)}
+                placeholder="https://youtu.be/..."
+                className="min-w-[200px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-500 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100" />
+              
+                <button
+                type="button"
+                disabled={!videoLink.trim().startsWith('http')}
+                onClick={() => {
+                  onChange({ video: videoLink.trim(), duration: '—' });
+                  setVideoLink('');
+                }}
+                className="rounded-lg bg-brand-500 px-3 py-2 text-xs font-bold text-white transition-colors duration-150 ease-out hover:bg-brand-600 disabled:bg-slate-200 disabled:text-ink-500">
+                
+                  Adaugă
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-500">
+                Video-urile stau pe YouTube sau Vimeo, nu aici: încărcate în
+                platformă, câteva lecții ar consuma tot spațiul și ar face
+                cursul greoi de deschis. Pe YouTube pune-le „nelistate" — se
+                văd doar cu linkul, nu apar în căutări.
+              </p>
             </div>
           }
         </div>
@@ -175,9 +209,17 @@ export function LessonEditor({
               aria-hidden="true" />
 
             }
-                <span className="flex-1 truncate text-xs font-semibold text-ink-700">
+                <button
+              type="button"
+              onClick={() =>
+              resource.kind === 'link' ?
+              window.open(resource.url ?? '#', '_blank', 'noopener') :
+              void openResource(resource)
+              }
+              className="flex-1 truncate text-left text-xs font-semibold text-brand-600 hover:underline">
+              
                   {resource.name}
-                </span>
+                </button>
                 <span className="text-[11px] font-semibold text-ink-500">
                   {resource.kind === 'link' ? 'Link' : 'Fișier'}
                 </span>
@@ -207,7 +249,7 @@ export function LessonEditor({
             type="button"
             disabled={linkName.trim().length === 0}
             onClick={() => {
-              addResource(linkName.trim(), 'link');
+              addResource(linkName.trim(), 'link', linkName.trim());
               setLinkName('');
             }}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-bold text-ink-700 transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 disabled:text-ink-500 disabled:hover:bg-white">
@@ -221,8 +263,7 @@ export function LessonEditor({
             accept=".pdf,.doc,.docx,.xlsx"
             className="hidden"
             onChange={(event) => {
-              const files = Array.from(event.target.files ?? []);
-              files.forEach((file) => addResource(file.name, 'file'));
+              void attachFiles(Array.from(event.target.files ?? []));
               event.target.value = '';
             }} />
           
@@ -237,9 +278,7 @@ export function LessonEditor({
           onDrop={(event) => {
             event.preventDefault();
             setDraggingFile(false);
-            Array.from(event.dataTransfer.files).forEach((file) =>
-            addResource(file.name, 'file')
-            );
+            void attachFiles(Array.from(event.dataTransfer.files));
           }}
           className={`mt-2 rounded-xl border-2 border-dashed p-4 text-center transition-colors duration-150 ease-out ${
           draggingFile ?
@@ -252,8 +291,11 @@ export function LessonEditor({
             aria-hidden="true" />
           
           <p className="mt-1.5 text-xs font-semibold text-ink-700">
-            Trage aici fișierele PDF
+            {uploading ? 'Se încarcă…' : 'Trage aici fișierele PDF'}
           </p>
+          {fileError &&
+          <p className="mt-1.5 text-xs font-semibold text-red-600">{fileError}</p>
+          }
           <button
             type="button"
             onClick={() => fileInput.current?.click()}

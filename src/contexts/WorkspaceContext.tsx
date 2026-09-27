@@ -22,6 +22,10 @@ import { useLeadsSync } from '../lib/leadsSync';
 import { useTasksSync } from '../lib/tasksSync';
 import { useCalendarsSync } from '../lib/calendarsSync';
 import { useProjectsSync } from '../lib/projectsSync';
+import { useBookingsSync } from '../lib/bookingsSync';
+import { useMessagesSync } from '../lib/messagesSync';
+import { useCollectionSync } from '../lib/collectionSync';
+import { bookings as demoBookings, type Booking } from '../data/bookings';
 
 /**
  * Numele folosite ca să marcăm ce a văzut fiecare om la pornire.
@@ -72,6 +76,9 @@ interface WorkspaceValue {
   setCourses: React.Dispatch<React.SetStateAction<Course[]>>;
   calendars: BookingCalendar[];
   setCalendars: React.Dispatch<React.SetStateAction<BookingCalendar[]>>;
+  /** Rezervările făcute în calendarele de programare */
+  bookings: Booking[];
+  setBookings: React.Dispatch<React.SetStateAction<Booking[]>>;
   availability: Record<string, DayAvailability[]>;
   setAvailability: React.Dispatch<
     React.SetStateAction<Record<string, DayAvailability[]>>>;
@@ -128,7 +135,12 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
   const [categories, setCategories] = useState<TaskCategory[]>(
     supabaseConfigured ? [] : initialCategories
   );
-  const [courses, setCourses] = useState<Course[]>(initialCourses);
+  const [courses, setCourses] = useState<Course[]>(
+    supabaseConfigured ? [] : initialCourses
+  );
+  const [bookings, setBookings] = useState<Booking[]>(
+    supabaseConfigured ? [] : demoBookings
+  );
   const [calendars, setCalendars] = useState<BookingCalendar[]>(
     supabaseConfigured ? [] : bookingCalendars
   );
@@ -136,7 +148,9 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     Record<string, DayAvailability[]>>(
     {});
   const [seenTasks, setSeenTasks] = useState<Record<string, string[]>>({});
-  const [messages, setMessages] = useState<TeamMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<TeamMessage[]>(
+    supabaseConfigured ? [] : initialMessages
+  );
   const [projects, setProjects] = useState<Project[]>(
     supabaseConfigured ? [] : seedProjects
   );
@@ -194,12 +208,29 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     setProjects
   });
 
+  const bookingsSync = useBookingsSync({
+    enabled: supabaseConfigured,
+    bookings,
+    setBookings
+  });
+
+  const messagesSync = useMessagesSync({
+    enabled: supabaseConfigured,
+    messages,
+    setMessages
+  });
+
+  // Materialele sunt documente cu module și lecții — se salvează întregi
+  useCollectionSync('course', courses, setCourses);
+
   /** O singură stare pentru toate cele trei legături cu baza de date */
   const syncStatuses = [
   leadsSync.status,
   tasksSync.status,
   calendarsSync.status,
-  projectsSync.status];
+  projectsSync.status,
+  bookingsSync.status,
+  messagesSync.status];
 
   const combinedStatus: 'idle' | 'loading' | 'ready' | 'error' =
   syncStatuses.includes('error') ?
@@ -254,6 +285,8 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
       setCourses,
       calendars,
       setCalendars,
+      bookings,
+      setBookings,
       availability,
       setAvailability,
       newTasksFor,
@@ -363,7 +396,9 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
       leadsSync.error ??
       tasksSync.error ??
       calendarsSync.error ??
-      projectsSync.error
+      projectsSync.error ??
+      bookingsSync.error ??
+      messagesSync.error
     }),
     [
     combinedStatus,
@@ -371,7 +406,10 @@ export function WorkspaceProvider({ children }: {children: React.ReactNode;}) {
     tasksSync.error,
     calendarsSync.error,
     projectsSync.error,
+    bookingsSync.error,
+    messagesSync.error,
     activeUser,
+    bookings,
     lists,
     leads,
     tasks,

@@ -17,12 +17,22 @@ import { PaymentLinkForm } from '../components/payments/PaymentLinkForm';
 import { LinkRowMenu } from '../components/payments/LinkRowMenu';
 import { ProductForm } from '../components/payments/ProductForm';
 import { Toast } from '../components/Toast';
+import { useCollectionSync, startWith } from '../lib/collectionSync';
+import { NotConnectedNotice } from '../components/NotConnectedNotice';
 
 const randomCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
 export function PaymentLinks() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [links, setLinks] = useState<PaymentLink[]>(initialPaymentLinks);
+  const [products, setProducts] = useState<Product[]>(
+    startWith(initialProducts)
+  );
+  const [links, setLinks] = useState<PaymentLink[]>(
+    startWith(initialPaymentLinks)
+  );
+
+  // Produsele și linkurile se salvează în baza de date
+  useCollectionSync('product', products, setProducts);
+  useCollectionSync('payment_link', links, setLinks);
   const [creating, setCreating] = useState(false);
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -81,6 +91,14 @@ export function PaymentLinks() {
           </button>
         </div>
       </div>
+
+      <NotConnectedNotice>
+        Produsele și linkurile se salvează și rămân acolo după refresh, iar
+        pagina de checkout se poate vedea. Ce nu se întâmplă încă:
+        <strong> nu se încasează bani</strong>. Pentru plăți reale e nevoie de
+        un cont Stripe conectat. Până atunci, tratează linkurile ca pe niște
+        machete funcționale, nu ca pe încasări.
+      </NotConnectedNotice>
 
       {productFormOpen &&
       <ProductForm

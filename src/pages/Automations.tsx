@@ -4,6 +4,7 @@ import { AutomationBuilderPreview } from '../components/automations/AutomationBu
 import { AutomationRecipes } from '../components/automations/AutomationRecipes';
 import { AutomationList } from '../components/automations/AutomationList';
 import { AutomationActivity } from '../components/automations/AutomationActivity';
+import { NotConnectedNotice } from '../components/NotConnectedNotice';
 
 const stats = [
 {
@@ -65,6 +66,14 @@ export function Automations() {
           </button>
         </div>
       </div>
+
+      <NotConnectedNotice title="Atenție: acest modul e deocamdată doar o machetă">
+        Tot ce vezi mai jos — fluxurile, cifrele, activitatea — e conținut de
+        prezentare, nu datele contului tău. Nu se poate crea o automatizare
+        reală și nimic nu rulează în fundal. E singurul modul care nici măcar nu
+        salvează ce construiești, pentru că automatizările au nevoie de un
+        serviciu separat care să le execute. Nu-l testa încă.
+      </NotConnectedNotice>
 
       <div className="mt-6 space-y-6">
         <div className="grid gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 sm:grid-cols-2 xl:grid-cols-4">
