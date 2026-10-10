@@ -25,7 +25,15 @@ interface DeadlinePickerProps {
 }
 
 const weekdayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-const today = startOfDay(new Date(2026, 7, 24));
+/**
+ * „Azi” e ziua reală, nu una scrisă în cod.
+ *
+ * Până acum aici era `new Date(2026, 7, 24)` — 24 august 2026 — rămas din
+ * prototip. Consecința: punctul de „azi” din calendar, zilele marcate ca
+ * trecute și termenele task-urilor arătau cu totul altă dată decât cea
+ * reală.
+ */
+const today = startOfDay(new Date());
 
 export function DeadlinePicker({
   deadline,

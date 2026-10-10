@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PlayIcon, ClockIcon, XIcon, SearchIcon } from 'lucide-react';
 import { tutorials, tutorialCategories, type Tutorial } from '../data/tutorials';
+import { NotConnectedNotice } from '../components/NotConnectedNotice';
 
 const levelStyle: Record<Tutorial['level'], string> = {
   Începător: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -41,6 +42,12 @@ export function Tutorials() {
           CRM, de la primii pași la permisiuni avansate.
         </p>
       </div>
+
+      <NotConnectedNotice title="Clipurile nu sunt încă filmate">
+        Lista de mai jos e planul de tutoriale, nu o bibliotecă gata făcută:
+        butoanele de play nu redau nimic deocamdată. Am lăsat-o vizibilă ca să
+        știi ce urmează și ca să-mi poți spune ce lipsește din listă.
+      </NotConnectedNotice>
 
       <div className="relative max-w-sm">
         <SearchIcon

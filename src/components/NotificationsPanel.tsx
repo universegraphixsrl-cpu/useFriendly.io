@@ -14,8 +14,8 @@ import {
   type TeamMessage } from
 '../data/notifications';
 import { useWorkspace } from '../contexts/WorkspaceContext';
-
-const ADMIN = 'Andreas Bălan';
+import { useAuth } from '../contexts/AuthContext';
+import { supabaseConfigured } from '../lib/supabase';
 
 const colorIn = (
 groups: { color: string; members: string[] }[],
@@ -28,6 +28,16 @@ export function NotificationsPanel() {
   const colorOf = (name: string) => colorIn(subAccounts, name);
 
   const { activeUser, messages, sendMessage, markMessagesRead } = useWorkspace();
+  const { profile } = useAuth();
+
+  /**
+   * Cine e „adminul” cu care vorbește un sub-account: primul manager
+   * real din echipă. Înainte era un nume scris în cod.
+   */
+  const ADMIN =
+  subAccounts.find((group) => group.role === 'Managers')?.members[0] ??
+  profile?.full_name ??
+  'Administrator';
   const isSub = activeUser !== null;
   const me = activeUser ?? ADMIN;
 
@@ -55,7 +65,14 @@ export function NotificationsPanel() {
     };
   }, [open]);
 
-  const notifications = isSub ?
+  /**
+   * Notificările de sistem sunt deocamdată exemple scrise în cod. Pe un
+   * cont real nu se afișează: ar anunța că „Ana Dumitrescu a încasat
+   * 2.000 €" de la oameni care nu există.
+   */
+  const notifications = supabaseConfigured ?
+  [] :
+  isSub ?
   agentNotifications(activeUser) :
   systemNotifications;
 

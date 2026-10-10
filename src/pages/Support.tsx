@@ -52,7 +52,7 @@ export function Support({ onOpenCallBooking }: SupportProps) {
                 className="h-3.5 w-3.5 text-ink-500"
                 aria-hidden="true" />
               
-              Rezolvă ~70% din întrebările frecvente
+              Răspunde imediat la întrebările despre cum se folosește platforma
             </li>
           </ul>
           <button
@@ -91,7 +91,7 @@ export function Support({ onOpenCallBooking }: SupportProps) {
                 aria-hidden="true" />
               
               <span className="font-semibold">
-                Rată de succes 100% în soluționarea problemei
+                Discuți direct cu omul care a construit platforma
               </span>
             </li>
           </ul>

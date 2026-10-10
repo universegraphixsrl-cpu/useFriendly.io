@@ -55,7 +55,7 @@ export function RevenueBySource() {
       <p className="text-sm text-ink-500">
         {activeUser ?
         `Din cele ${total.toLocaleString('ro-RO')} leaduri atribuite ție` :
-        `Din totalul de ${total.toLocaleString('ro-RO')} leaduri din cele 4 liste`}
+        `Din totalul de ${total.toLocaleString('ro-RO')} leaduri`}
       </p>
 
       {total === 0 ?

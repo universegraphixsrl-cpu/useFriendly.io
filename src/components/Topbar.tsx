@@ -44,8 +44,9 @@ export function Topbar({ view, onNavigate, onOpenMenu }: TopbarProps) {
   const { activeUser } = useWorkspace();
   const { runLabel } = useUiActions();
   const { session, profile, demoMode, signOut } = useAuth();
+  // Niciodată un nume inventat: dacă profilul încă se încarcă, mai bine gol
   const displayName =
-  activeUser ?? profile?.full_name ?? 'Andreas Bălan';
+  activeUser ?? profile?.full_name ?? (demoMode ? 'Andreas Bălan' : 'Contul meu');
   const initials = displayName.
   split(' ').
   map((part) => part[0]).

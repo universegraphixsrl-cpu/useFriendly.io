@@ -84,6 +84,37 @@ groups: SubAccountRole[])
 }
 
 /**
+ * Cifrele unui singur om, din leadurile în care e responsabil.
+ * Folosit de panoul de start al unui sub-account.
+ */
+export function personStats(leads: Lead[], name: string) {
+  const mine = leads.filter((lead) => lead.owner === name);
+  const scheduled = mine.filter((lead) => SCHEDULED.has(lead.status));
+  const attended = mine.filter((lead) => ATTENDED.has(lead.status));
+  const signed = mine.filter((lead) => lead.status === SIGNED);
+
+  /** Doar contractele semnate în luna calendaristică curentă */
+  const now = new Date();
+  const thisMonth =
+  now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const signedThisMonth = signed.filter(
+    (lead) => leadDateIso(lead.addedOn ?? '').slice(0, 7) === thisMonth
+  );
+
+  return {
+    mine,
+    scheduled,
+    attended,
+    signed,
+    signedThisMonth,
+    showUp: pct(attended.length, scheduled.length),
+    closeRate: pct(signed.length, attended.length),
+    collected: collected(signed),
+    collectedThisMonth: collected(signedThisMonth)
+  };
+}
+
+/**
  * Pâlnia: doar etapele pe care CRM-ul le cunoaște cu adevărat.
  * „Participanți live” și „au rămas la ofertă” ar veni din platforma de
  * webinar, care nu e conectată — de aceea lipsesc, în loc să fie inventate.

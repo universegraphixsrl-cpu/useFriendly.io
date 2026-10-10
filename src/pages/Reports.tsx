@@ -21,6 +21,7 @@ import {
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import { leadDateIso } from '../data/leads';
 import { useTeam, callerNamesIn } from '../lib/team';
+import { useAuth } from '../contexts/AuthContext';
 import { exportReportPdf } from '../utils/exportReportPdf';
 import { AgentFilter } from '../components/reports/AgentFilter';
 import { CallerPerformanceTable } from '../components/reports/CallerPerformanceTable';
@@ -38,6 +39,7 @@ const callerMetricIds = [
 export function Reports() {
   const { leads, activeUser } = useWorkspace();
   const { groups } = useTeam();
+  const { profile } = useAuth();
   const callerNames = callerNamesIn(groups);
   const [range, setRange] = useState<ReportRange>(defaultReportRange);
   // Cei 6 indicatori principali sunt pre-selectați, dar pot fi scoși.
@@ -79,7 +81,9 @@ export function Reports() {
     },
     {}
   );
-  const periodLabel = `${formatRange(range)} 2026`;
+  /** Anul vine din intervalul ales, nu scris în cod — altfel în 2027 raportul ar fi etichetat greșit */
+  const rangeYear = range.end.slice(0, 4);
+  const periodLabel = `${formatRange(range)} ${rangeYear}`;
   const scopedLeadCount = isCallerScope ? callerLeads.length : rangeLeads.length;
 
   /** Exportă raportul păstrând grafica din aplicație */
@@ -93,7 +97,9 @@ export function Reports() {
         period: periodLabel,
         owner:
         scopedUser ??
-        'Andreas Bălan · cont principal',
+        (profile?.full_name ?
+        `${profile.full_name} · cont principal` :
+        'Cont principal'),
         subtitle: `${days} ${
         days === 1 ? 'zi' : 'zile'} · ${
         scopedLeadCount} leaduri · ${selectedMetrics.length} indicatori`
@@ -127,7 +133,7 @@ export function Reports() {
             Rapoarte vânzări
           </h1>
           <p className="mt-1 text-sm text-ink-700">
-            {formatRange(range)} 2026 · {days}{' '}
+            {formatRange(range)} {rangeYear} · {days}{' '}
             {days === 1 ? 'zi' : 'zile'} · grupare pe {range.grain} ·{' '}
             {activeUser ?
             `cifrele tale din perioada selectată (${scopedLeadCount} leaduri)` :

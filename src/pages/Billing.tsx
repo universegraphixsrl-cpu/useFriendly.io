@@ -11,6 +11,7 @@ import {
 'lucide-react';
 import { invoices, planUsage, type Invoice } from '../data/billing';
 import { NotConnectedNotice } from '../components/NotConnectedNotice';
+import { supabaseConfigured } from '../lib/supabase';
 
 const statusStyles: Record<Invoice['status'], string> = {
   Plătită: 'bg-emerald-50 text-emerald-700',
@@ -24,13 +25,23 @@ const statusIcons: Record<Invoice['status'], typeof CheckCircle2Icon> = {
   Eșuată: AlertTriangleIcon
 };
 
+/**
+ * Datele de firmă de aici erau inventate: un CUI, un IBAN și o adresă
+ * din Cluj care nu aparțin nimănui. Pe un cont real le lăsăm goale —
+ * un IBAN fals pe un ecran de facturare e exact genul de lucru pe care
+ * cineva îl copiază fără să verifice.
+ *
+ * Datele adevărate se completează în „Contul meu”.
+ */
+const blank = (value: string) => supabaseConfigured ? '—' : value;
+
 const companyFields = [
-{ label: 'Nume companie', value: 'EliteClosers România SRL' },
-{ label: 'CUI / CIF', value: 'RO45120983' },
-{ label: 'Nr. registrul comerțului', value: 'J12/2841/2023' },
-{ label: 'Adresă', value: 'Str. Mihai Viteazu 14, Cluj-Napoca, România' },
-{ label: 'Email facturare', value: 'facturi@eliteclosers.ro' },
-{ label: 'Bancă / IBAN', value: 'ING · RO49 INGB 0000 9999 1234 5678' }];
+{ label: 'Nume companie', value: blank('EliteClosers România SRL') },
+{ label: 'CUI / CIF', value: blank('RO45120983') },
+{ label: 'Nr. registrul comerțului', value: blank('J12/2841/2023') },
+{ label: 'Adresă', value: blank('Str. Mihai Viteazu 14, Cluj-Napoca, România') },
+{ label: 'Email facturare', value: blank('facturi@eliteclosers.ro') },
+{ label: 'Bancă / IBAN', value: blank('ING · RO49 INGB 0000 9999 1234 5678') }];
 
 
 export function Billing() {
@@ -143,9 +154,13 @@ export function Billing() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-display text-sm font-bold text-ink">
-                Visa •••• 4242
+                {blank('Visa •••• 4242')}
               </p>
-              <p className="text-xs text-ink-500">Expiră în 09/2029</p>
+              <p className="text-xs text-ink-500">
+                {supabaseConfigured ?
+                'Niciun card adăugat' :
+                'Expiră în 09/2029'}
+              </p>
             </div>
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
               Principal

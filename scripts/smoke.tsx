@@ -12,6 +12,7 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
+import { supabaseConfigured } from '../src/lib/supabase';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { WorkspaceProvider } from '../src/contexts/WorkspaceContext';
 import { UiActionsProvider } from '../src/contexts/UiActionsContext';
@@ -28,6 +29,11 @@ import { Materials } from '../src/pages/Materials';
 import { Automations } from '../src/pages/Automations';
 import { Billing } from '../src/pages/Billing';
 import { Account } from '../src/pages/Account';
+import { Tutorials } from '../src/pages/Tutorials';
+import { Support } from '../src/pages/Support';
+import { SupportCall } from '../src/pages/SupportCall';
+import { SubAccountDashboard } from '../src/pages/SubAccountDashboard';
+import { IntegrationsCatalog } from '../src/pages/IntegrationsCatalog';
 
 const pages: [string, React.ComponentType][] = [
   ['Reports', Reports],
@@ -42,7 +48,14 @@ const pages: [string, React.ComponentType][] = [
   ['Materials', Materials],
   ['Automations', Automations],
   ['Billing', Billing],
-  ['Account', () => <Account theme="light" onThemeChange={() => {}} />]
+  ['Account', () => <Account theme="light" onThemeChange={() => {}} />],
+  ['Tutorials', Tutorials],
+  ['Support', () => <Support onOpenCallBooking={() => {}} />],
+  ['SupportCall', () => <SupportCall onBack={() => {}} />],
+  ['IntegrationsCatalog', IntegrationsCatalog],
+  [
+  'SubAccountDashboard',
+  () => <SubAccountDashboard name="Test Caller" role="Caller" />]
 ];
 
 // Avertismentele de useLayoutEffect sunt normale la randarea pe server
@@ -51,6 +64,17 @@ console.error = (...args: unknown[]) => {
   if (typeof args[0] === 'string' && args[0].includes('useLayoutEffect')) return;
   realError(...args);
 };
+
+/**
+ * Ce nu are voie să apară pe ecran.
+ *
+ * Calculele greșite (NaN, Infinity) sunt interzise oriunde. Numele și
+ * datele din prototip sunt interzise doar pe un cont real — pe datele
+ * fictive de lucru local ele SUNT conținutul, deci e normal să apară.
+ */
+const SUSPECT = supabaseConfigured ?
+/NaN|Infinity|undefined%|Andreas B|Vlad Ionescu|Bianca Moldovan|Ana Dumitrescu|Cătălina Enea|RO45120983|4242/g :
+/NaN|Infinity|undefined%/g;
 
 let failed = false;
 for (const [name, Page] of pages) {
@@ -66,11 +90,12 @@ for (const [name, Page] of pages) {
       </AuthProvider>
       </MemoryRouter>
     );
-    const bad = /NaN|Infinity|undefined%/.exec(html);
+    const bad = SUSPECT.exec(html);
+    SUSPECT.lastIndex = 0;
     console.log(`OK   ${name}  (${html.length} chars)${bad ? '  !! ' + bad[0] : ''}`);
     if (bad) {
       failed = true;
-      const all = [...html.matchAll(/NaN|Infinity|undefined%/g)];
+      const all = [...html.matchAll(SUSPECT)];
       all.slice(0, 12).forEach((m) => {
         const at = m.index ?? 0;
         console.log('     …' + html.slice(Math.max(0, at - 160), at + 40).replace(/\s+/g, ' ') + '…');

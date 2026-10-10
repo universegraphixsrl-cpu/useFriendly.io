@@ -29,8 +29,18 @@ import {
 '../data/calendars';
 import { AvailabilityEditor } from '../components/calendar/AvailabilityEditor';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { useAuth } from '../contexts/AuthContext';
+import { clockNow } from '../appRoutes';
 
-const today = startOfDay(new Date(2026, 7, 24));
+/**
+ * „Azi” e ziua reală, nu una scrisă în cod.
+ *
+ * Până acum aici era `new Date(2026, 7, 24)` — 24 august 2026 — rămas din
+ * prototip. Consecința: punctul de „azi” din calendar, zilele marcate ca
+ * trecute și termenele task-urilor arătau cu totul altă dată decât cea
+ * reală.
+ */
+const today = startOfDay(new Date());
 
 function firstAvailableDate() {
   let cursor = today;
@@ -49,6 +59,7 @@ export function Calendar() {
     availability,
     setAvailability
   } = useWorkspace();
+  const { profile } = useAuth();
   const isSub = activeUser !== null;
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
 
@@ -96,6 +107,8 @@ export function Calendar() {
   };
 
   const createCalendar = (draft: CalendarDraft) => {
+    /** Gazda implicită e omul logat, nu un nume scris în cod */
+    const hostName = activeUser ?? profile?.full_name ?? 'Gazdă';
     const buffer =
     draft.bufferBefore || draft.bufferAfter ?
     ` · buffer ${draft.bufferBefore}/${draft.bufferAfter} min` :
@@ -113,10 +126,10 @@ export function Calendar() {
       days: `Lun – Vin · 09:00 – 18:00${buffer} · Google: ${draft.googleCalendar}`,
       color: draft.color,
       active: true,
-      host: isTeam ? 'Echipa invitată' : activeUser ?? 'Andreas Bălan',
+      host: isTeam ? 'Echipa invitată' : hostName,
       initials: isTeam ?
       'EI' :
-      (activeUser ?? 'Andreas Bălan').
+      hostName.
       split(' ').
       map((part) => part[0]).
       join('').
@@ -196,7 +209,7 @@ export function Calendar() {
                         className="h-4 w-4 text-ink-500"
                         aria-hidden="true" />
                       
-                      Ora României (14:20)
+                      Ora României ({clockNow()})
                     </button>
                   </div>
                 </div>

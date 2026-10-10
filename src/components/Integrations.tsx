@@ -11,7 +11,8 @@ import {
   PlugIcon,
   ArrowRightIcon } from
 'lucide-react';
-import { integrations, type Integration } from '../data/crm';
+import { integrations as demoIntegrations, type Integration } from '../data/crm';
+import { supabaseConfigured } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useUiActions } from '../contexts/UiActionsContext';
 import { viewPath } from '../appRoutes';
@@ -36,6 +37,21 @@ const statusStyles: Record<Integration['status'], string> = {
 export function Integrations() {
   const navigate = useNavigate();
   const { runLabel } = useUiActions();
+
+  /**
+   * Nicio integrare nu e conectată până nu o conectează cineva.
+   * Pe datele fictive de lucru local rămâne catalogul de exemplu;
+   * pe un cont real, toate pornesc ca „Disponibil" — altfel ecranul
+   * ar susține că Gmail și Slack merg deja, ceea ce ar trimite pe
+   * cineva să aștepte emailuri care nu pleacă.
+   */
+  const integrations: Integration[] = supabaseConfigured ?
+  demoIntegrations.map((item) => ({ ...item, status: 'Disponibil' as const })) :
+  demoIntegrations;
+  const connectedCount = integrations.filter(
+    (item) => item.status === 'Conectat'
+  ).length;
+
   return (
     <section
       aria-labelledby="integrations-title"
@@ -54,7 +70,9 @@ export function Integrations() {
               Integrări
             </h2>
             <p className="text-xs text-ink-500">
-              5 conectate · 1 necesită atenție
+              {connectedCount === 0 ?
+              'Niciuna conectată încă' :
+              `${connectedCount} conectate`}
             </p>
           </div>
         </div>

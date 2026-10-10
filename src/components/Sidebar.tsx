@@ -149,6 +149,9 @@ export function Sidebar({
   const { groups: subAccounts, total } = useTeam();
   /** Câți oameni au cont, în afară de cel logat */
   const teamCount = Math.max(0, total - 1);
+  /** Locurile ocupate: oamenii care chiar au cont în platformă */
+  const SEAT_LIMIT = 50;
+  const seatsUsed = total;
   const { unseenTasksFor, unseenSectionFor, markSectionSeen, openTasksFor } =
   useWorkspace();
   const { runLabel } = useUiActions();
@@ -478,7 +481,8 @@ export function Sidebar({
               Plan Growth
             </p>
             <p className="mt-1.5 text-sm leading-snug text-ink-700">
-              7 din 10 locuri de utilizator folosite.
+              {seatsUsed} {seatsUsed === 1 ? 'loc folosit' : 'locuri folosite'} din{' '}
+              {SEAT_LIMIT}.
             </p>
             <button
             type="button"

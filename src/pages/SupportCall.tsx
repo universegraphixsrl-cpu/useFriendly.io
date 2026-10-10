@@ -9,8 +9,17 @@ import {
 'lucide-react';
 import { MonthGrid, isAvailable } from '../components/calendar/MonthGrid';
 import { TimeSlots } from '../components/calendar/TimeSlots';
+import { clockNow } from '../appRoutes';
 
-const today = startOfDay(new Date(2026, 7, 24));
+/**
+ * „Azi” e ziua reală, nu una scrisă în cod.
+ *
+ * Până acum aici era `new Date(2026, 7, 24)` — 24 august 2026 — rămas din
+ * prototip. Consecința: punctul de „azi” din calendar, zilele marcate ca
+ * trecute și termenele task-urilor arătau cu totul altă dată decât cea
+ * reală.
+ */
+const today = startOfDay(new Date());
 
 const morningSlots = [
 '09:00',
@@ -166,7 +175,7 @@ export function SupportCall({ onBack }: SupportCallProps) {
                       className="h-4 w-4 text-ink-500"
                       aria-hidden="true" />
                     
-                    Ora României (14:20)
+                    Ora României ({clockNow()})
                   </button>
                 </div>
               </div>

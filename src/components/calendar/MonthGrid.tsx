@@ -23,11 +23,19 @@ interface MonthGridProps {
 
 const weekdayLabels = ['LUN', 'MAR', 'MIE', 'JOI', 'VIN', 'SÂM', 'DUM'];
 
+/**
+ * O zi e disponibilă dacă e în viitor și nu cade în weekend.
+ *
+ * Înainte se termina cu `date.getDate() % 7 !== 3`, adică zilele apăreau
+ * indisponibile după restul împărțirii numărului zilei la 7. Arăta ca o
+ * agendă ocupată, dar era aritmetică pură — zile blocate la întâmplare,
+ * în grila pe care clientul face rezervarea.
+ */
 export function isAvailable(date: Date, today: Date) {
   const weekday = getDay(date);
   if (weekday === 0 || weekday === 6) return false;
   if (isBefore(startOfDay(date), startOfDay(today))) return false;
-  return date.getDate() % 7 !== 3;
+  return true;
 }
 
 export function MonthGrid({

@@ -34,7 +34,11 @@ export function AutomationsPanel() {
               
               Automatizări
             </h2>
-            <p className="text-xs text-ink-500">8 active · 171 rulări</p>
+            <p className="text-xs text-ink-500">
+              {automations.length === 0 ?
+              'Modul în pregătire' :
+              `${automations.filter((item) => item.active).length} active din ${automations.length}`}
+            </p>
           </div>
         </div>
         <button

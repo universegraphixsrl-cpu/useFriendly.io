@@ -37,3 +37,12 @@ export function viewFromPath(pathname: string): View {
   );
   return match?.[0] ?? 'dashboard';
 }
+
+/** Ora curentă în România, ca „14:20” — pentru etichetele de fus orar */
+export function clockNow() {
+  return new Intl.DateTimeFormat('ro-RO', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Bucharest'
+  }).format(new Date());
+}

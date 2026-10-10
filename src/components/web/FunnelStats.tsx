@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { FunnelStep } from '../../data/funnels';
 import { DateFilter, type LeadDateFilter } from '../leads/DateFilter';
+import { supabaseConfigured } from '../../lib/supabase';
+import { NotConnectedNotice } from '../NotConnectedNotice';
 
 /** Cât din traficul total intră în perioada aleasă */
 function periodShare(filter: LeadDateFilter): number {
@@ -19,8 +21,18 @@ interface FunnelStatsProps {
   steps: FunnelStep[];
 }
 
-/** Cifre stabile per pas, derivate din id — aceleași la fiecare randare */
+/**
+ * Cifre de exemplu pentru lucrul local pe design, derivate din id ca să
+ * fie stabile între randări.
+ *
+ * ATENȚIE: nu sunt trafic real și nu au fost niciodată. Pe un cont cu
+ * baza de date conectată returnăm zero — paginile nu sunt publicate
+ * nicăieri și nimic nu numără vizitele, deci orice altă cifră ar fi o
+ * minciună afișată ca „Vânzări totale”.
+ */
 function statsFor(step: FunnelStep) {
+  if (supabaseConfigured) return { views: 0, optIns: 0, rate: 0 };
+
   const seed = step.id.
   split('').
   reduce((total, char) => total + char.charCodeAt(0), 0);
@@ -56,7 +68,8 @@ export function FunnelStats({ steps }: FunnelStatsProps) {
       rate: views === 0 ? 0 : optIns / views * 100,
       addToCart,
       orders,
-      revenue: orders * 780
+      // 780 € per comandă e o valoare de exemplu, nu un preț real
+      revenue: supabaseConfigured ? 0 : orders * 780
     };
   });
   const totalViews = rows.reduce((total, row) => total + row.views, 0);
@@ -69,6 +82,13 @@ export function FunnelStats({ steps }: FunnelStatsProps) {
 
   return (
     <div className="px-6 py-6">
+      <NotConnectedNotice title="Cifrele de trafic nu sunt conectate">
+        Pașii funnel-ului se salvează și îi regăsești la refresh. Dar
+        vizualizările, opt-in-urile și vânzările de mai jos rămân pe zero:
+        paginile nu sunt publicate pe un domeniu și nimic nu numără vizitele
+        încă. Orice altă cifră aici ar fi inventată.
+      </NotConnectedNotice>
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-wrap gap-10">
           <div>
