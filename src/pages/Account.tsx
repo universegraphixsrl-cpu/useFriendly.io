@@ -33,6 +33,8 @@ export function Account({ theme, onThemeChange }: AccountProps) {
   const [phone, setPhone] = useState('');
   const [vat, setVat] = useState('');
   const [address, setAddress] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const [logo, setLogo] = useState('');
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,6 +43,16 @@ export function Account({ theme, onThemeChange }: AccountProps) {
   const [saving, setSaving] = useState(false);
 
   const email = session?.user?.email ?? '';
+
+  /** Inițialele arătate cât timp nu e pusă o poză */
+  const initialsOf = (text: string, fallback: string) => {
+    const parts = text.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return fallback;
+    return parts.
+    slice(0, 2).
+    map((part) => part[0].toUpperCase()).
+    join('');
+  };
 
   /**
    * Câmpurile pornesc de la profilul real, nu de la un om inventat.
@@ -55,6 +67,8 @@ export function Account({ theme, onThemeChange }: AccountProps) {
     setCompanyName((profile as any).company_name ?? '');
     setVat((profile as any).company_vat ?? '');
     setAddress((profile as any).company_address ?? '');
+    setAvatar((profile as any).avatar_url ?? '');
+    setLogo((profile as any).company_logo_url ?? '');
   }, [profile]);
 
   /**
@@ -236,8 +250,12 @@ export function Account({ theme, onThemeChange }: AccountProps) {
               <ImageUploader
                 label="Poză de profil"
                 hint="JPG sau PNG, minim 400×400 px"
-                fallback="AB"
-                onChanged={() => setDirty(true)} />
+                fallback={initialsOf(fullName, '—')}
+                value={avatar}
+                onSave={(url) => {
+                  setAvatar(url);
+                  void saveProfile({ avatar_url: url }, 'Poza a fost salvată.');
+                }} />
               
             </div>
 
@@ -354,9 +372,13 @@ export function Account({ theme, onThemeChange }: AccountProps) {
               <ImageUploader
                 label="Logo companie"
                 hint="PNG cu fundal transparent, minim 512×512 px"
-                fallback="EC"
+                fallback={initialsOf(companyName, '—')}
                 shape="square"
-                onChanged={() => setDirty(true)} />
+                value={logo}
+                onSave={(url) => {
+                  setLogo(url);
+                  void saveProfile({ company_logo_url: url }, 'Logo-ul a fost salvat.');
+                }} />
               
             </div>
 
